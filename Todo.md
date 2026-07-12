@@ -203,6 +203,35 @@ Aufgaben:
 - [x] Z9-T3  CHANGELOG v0.2.12 + Z8-T5 Befund + Zyklus 9.
 - [x] Z9-T4  pio run SUCCESS, Branch, PR #32, Tag v0.2.12 + push.
 - [ ] Z9-T5  (USER) Hardware-Test v0.2.12:
-           1. steht grau "0.1.0" (oder 0.1.1) unter v0.2.12?
+-------------------------------------------------------------------
+USER-Test v0.2.12: "1 = v0.2.12  2 = GW: ? in rot" -> weiterhin rot!
+  => MEINE v0.2.12-Annahme (192.168.0.87) WAR FALSCH.
+  USER-Frage: sieht man am Pi, ob der ESP die Version kriegt?
+  -> JA: Log in /var/log/rmx-sx-gateway/rmx-sx-wlan-gateway.log
+     (journalctl leer, weil gateway.yaml log_dir auf Datei zeigt).
+
+==================================================================
+Zyklus 10: ESP-Subnetz = 192.168.50.x -> GW_HOST MUSS 192.168.50.1 sein
+==================================================================
+Verifiziert (Pi-Log):
+- Daemon-Log zeigt: ESP (fahrregler-01, fw v0.2.3) verbindet von
+  IP 192.168.50.199 -> hello. Also haengt ESP am Pi-AP (wlan0).
+- dhcpcd.conf: wlan0 static ip_address=192.168.50.1/24.
+  dnsmasq dhcp-range 192.168.50.100-200. SSID "Modellbahn-Fahrregler".
+-> Pi-AP-Adresse = 192.168.50.1. Vom ESP (192.168.50.199) erreichbar.
+-> v0.2.12 (192.168.0.87) war vom ESP-Subnetz aus NICHT routbar => rot.
+Fix: GW_HOST zurueck auf 192.168.50.1. FW_VERSION -> v0.2.13.
+Aufgaben:
+- [x] Z10-T1 platformio.ini + config.h: GW_HOST 192.168.0.87 -> 192.168.50.1.
+- [x] Z10-T2 config.h FW_VERSION v0.2.13.
+- [x] Z10-T3 CHANGELOG v0.2.13 + WIDERRUF v0.2.12 + Zyklus 10.
+- [x] Z10-T4 pio run SUCCESS, Branch, PR #33, Tag v0.2.13 + push.
+- [ ] Z10-T5 (USER) Hardware-Test v0.2.13:
+           1. steht grau "0.1.0" (oder 0.1.1) unter v0.2.13?
            2. KEIN rotes "GW: ?" mehr?
            Antwort: 1. ja/nein  2. ja/nein
+
+== HINWEIS fuer USER: Log am Pi ansehen ==
+  ssh michael@192.168.0.87  (oder am Pi direkt)
+  sudo tail -f /var/log/rmx-sx-gateway/rmx-sx-gateway.log
+  (journalctl -u rmx-sx-wlan-gateway ist LEER: Log geht in Datei.)

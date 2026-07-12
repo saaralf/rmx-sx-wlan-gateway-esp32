@@ -14,18 +14,29 @@ FW_VERSION, Tag und Log jederzeit nachvollziehbar sind.
 ### Behoben (WURZELURSACHE: falscher Gateway-Host)
 - **Befund (USER, v0.2.11):** Display zeigt nur rotes "GW: ?", KEIN graues
   "0.1.1". Ursache war NICHT die Anzeige, sondern die Netzverbindung:
-  `GW_HOST` war auf "192.168.50.1" gesetzt, der Gateway-Daemon laeuft
-  ABER auf dem Raspi unter 192.168.0.87:8080. 192.168.50.1 ist vom
-  ESP/Netz nicht erreichbar -> kein hello_ack -> gwVersion leer -> "GW: ?".
-- **Verifiziert:** Roher WebSocket-Handshake gegen 127.0.0.1:8080 (Pi) liefert
-  `{"type":"hello_ack","server":"rmx-sx-gateway","server_version":"0.1.0",
-  "status":"ready"}`. Der Daemon antwortet mit **0.1.0** (nicht 0.1.1 — die
-  gelieferte SERVER_VERSION im Daemon weicht von __version__ ab; unkritisch).
-- **Fix:** `GW_HOST` in platformio.ini (massgebend) + config.h auf
-  "192.168.0.87" gesetzt. Port 8080 bleibt offen.
-- `config.h` FW_VERSION v0.2.11 -> v0.2.12 (Pflicht-Bump).
+  `GW_HOST` war auf "192.168.50.1" gesetzt.
+- **KORREKTUR (WIDERRUF v0.2.12):** v0.2.12 aenderte GW_HOST auf
+  "192.168.0.87" (Pi eth0) — das war FALSCH. Der ESP haengt am Pi-AP
+  (wlan0) im Subnetz 192.168.50.x (ESP-IP laut Daemon-Log 192.168.50.199).
+  Vom ESP-Subnetz aus ist 192.168.0.87 nicht routbar -> weiter rotes "GW: ?".
+  RICHTIG ist die Pi-AP-Adresse **192.168.50.1** (dhcpcd.conf static
+  ip_address=192.168.50.1/24; dnsmasq dhcp-range 192.168.50.100-200).
+- **Verifiziert (Pi-Log /var/log/rmx-sx-gateway/rmx-sx-gateway.log):**
+  `client registered client: fahrregler-01 fw: v0.2.3` von IP 192.168.50.199
+  + `hello`. Daemon liefert hello_ack mit server_version 0.1.0 (OK).
+- **Fix v0.2.13:** `GW_HOST` zurueck auf "192.168.50.1"
+  (platformio.ini massgebend + config.h).
+- `config.h` FW_VERSION v0.2.12 -> v0.2.13 (Pflicht-Bump).
 ### Technik / Verifikation
-- `pio run` SUCCESS. GW_HOST 192.168.0.87 (Pi-IP, Port 8080 offen).
+- `pio run` SUCCESS. GW_HOST 192.168.50.1 (Pi-AP wlan0, ESP-Subnetz).
+
+## [v0.2.13] - 2026-07-13
+### Behoben (GW_HOST-Korrektur: Pi-AP-Adresse 192.168.50.1)
+- WIDERRUF v0.2.12: GW_HOST 192.168.0.87 war falsch (ESP-Subnetz
+  192.168.50.x kann 192.168.0.87 eth0 nicht routen).
+- Richtig: Pi-AP (wlan0) = 192.168.50.1 (dhcpcd.conf static / dnsmasq).
+- ESP-IP laut Daemon-Log 192.168.50.199 -> GW_HOST 192.168.50.1 erreichbar.
+- config.h FW_VERSION v0.2.12 -> v0.2.13 (Pflicht-Bump).
 
 ## [v0.2.11] - 2026-07-13
 ### Behoben (rotes "?"-Artefakt nach hello_ack)
