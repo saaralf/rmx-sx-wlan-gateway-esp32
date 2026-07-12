@@ -63,6 +63,20 @@ bool touchIsPressed();
 void touchGetCalibrated(int16_t* px, int16_t* py);
 
 /**
+ * @brief Startet eine manuelle Ecken-Kalibrierung (Bodmer/PacoMouseCYD-Prinzip).
+ *
+ * @param keine
+ * @return void
+ * @note Oeffnet ein 12s-Fenster: der User tippt nacheinander die 4
+ *       Display-Ecken an. Die gemessenen Roh-Grenzen werden dann in NVS
+ *       (Preferences) gespeichert und jeden Boot automatisch geladen.
+ *       Besser als reine Auto-Calib, weil die Range exakt auf das echte
+ *       Panel gesetzt wird (keine systematische Y-Verschiebung mehr).
+ *       Trigger ueber Serial-Kommando "calib" (siehe main.cpp).
+ */
+void touchStartCalibration();
+
+/**
  * @brief Edge-Detection (PacoMouseCYD-Prinzip): liefert genau EINMAL
  *        true, wenn ein neuer Finger-Down erkannt wurde.
  *

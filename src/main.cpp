@@ -140,4 +140,24 @@ void loop()
         guiDrawDebugTouch(pressed, (int16_t)d.x, (int16_t)d.y, px, py);
         guiDrawLoopCounter(loopCount / 10);
     }
+
+    // --- Serial-Kommando "calib": manuelle Touch-Ecken-Kalibrierung ---
+    static String serialLine = "";
+    while (Serial.available())
+    {
+        char c = Serial.read();
+        if (c == '\n' || c == '\r')
+        {
+            serialLine.trim();
+            if (serialLine == "calib")
+            {
+                touchStartCalibration();   // 12 s Fenster, 4 Ecken antippen
+            }
+            serialLine = "";
+        }
+        else
+        {
+            serialLine += c;
+        }
+    }
 }

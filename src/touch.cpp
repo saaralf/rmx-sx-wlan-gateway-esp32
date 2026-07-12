@@ -13,6 +13,7 @@
 // ============================================================================
 
 #include "touch.h"
+#include <Preferences.h>   // NVS-Speicher fuer dauerhafte Touch-Kalibrierung
 
 // --- Interne Zustaende -----------------------------------------------------
 static uint16_t _xraw = 0, _yraw = 0, _zraw = 0;  // letzte Rohwerte
@@ -27,6 +28,44 @@ static uint16_t _yMin = TS_MIN_Y, _yMax = TS_MAX_Y;
 static bool _wasPressed = false;     // war im letzten Zyklus gedrueckt?
 static uint32_t _tapSumX = 0, _tapSumY = 0;   // Akkumulator fuer Mittelung
 static uint8_t  _tapCount = 0;     // Anzahl gemittelter Samples
+
+// --- Manuelle Ecken-Kalibrierung (Bodmer/PacoMouseCYD-Prinzip) ---
+// Besser als reine Auto-Calib, weil NVS-gespeichert (nicht fluechtig)
+// und die Start-Range NICHT nur erweitert, sondern exakt auf die echte
+// Panel-Range gesetzt wird -> keine systematische Y-Verschiebung mehr.
+static bool     _calibrating = false;
+static uint32_t _calibDeadline = 0;     // wann das Fenster schliesst
+static uint8_t  _calibSamples = 0;     // wieviele Ecken-Samples erfasst
+static uint32_t _calX = 0, _calY = 0; // Akkumulator fuer aktuelle Ecke
+// Backup der gueltigen Limits (bei abgebrochener Kalib wiederherstellen)
+static uint16_t _xMinBak = TS_MIN_X, _xMaxBak = TS_MAX_X;
+static uint16_t _yMinBak = TS_MIN_Y, _yMaxBak = TS_MAX_Y;
+
+// Hilfsfunktion: laden/speichern der kalibrierten Grenzen in NVS
+static void touchLoadCalibration()
+{
+    Preferences p;
+    if (p.begin("touchcal", true))   // read-only
+    {
+        _xMin = p.getUShort("xmin", TS_MIN_X);
+        _xMax = p.getUShort("xmax", TS_MAX_X);
+        _yMin = p.getUShort("ymin", TS_MIN_Y);
+        _yMax = p.getUShort("ymax", TS_MAX_Y);
+        p.end();
+    }
+}
+static void touchSaveCalibration()
+{
+    Preferences p;
+    if (p.begin("touchcal", false))  // read-write
+    {
+        p.putUShort("xmin", _xMin);
+        p.putUShort("xmax", _xMax);
+        p.putUShort("ymin", _yMin);
+        p.putUShort("ymax", _yMax);
+        p.end();
+    }
+}
 
 // ============================================================================
 // Bit-Bang Low-Level: ein Command-Byte (8 Bit) + 12 Datenbits lesen
@@ -99,6 +138,9 @@ static void touchUpdate()
 
 void touchBegin()
 {
+    // Ggf. gespeicherte Ecken-Kalibrierung aus NVS laden
+    touchLoadCalibration();
+
     pinMode(TOUCH_CLK,  OUTPUT);
     digitalWrite(TOUCH_CLK, LOW);
     pinMode(TOUCH_MOSI, OUTPUT);
@@ -133,8 +175,8 @@ bool touchIsPressed()
 void touchGetCalibrated(int16_t* px, int16_t* py)
 {
     const int16_t W = 240, H = 320;   // Layout::screenWidth/Height (siehe gui.h)
-    int16_t x = map((int)_xraw, (int)_xMin, (int)_xMax, 0, W - 1);
-    int16_t y = map((int)_yraw, (int)_yMin, (int)_yMax, 0, H - 1);
+    int16_t x = (_xMax > _xMin) ? map((int)_xraw, (int)_xMin, (int)_xMax, 0, W - 1) : (W - 1) / 2;
+    int16_t y = (_yMax > _yMin) ? map((int)_yraw, (int)_yMin, (int)_yMax, 0, H - 1) : (H - 1) / 2;
     *px = constrain(x, 0, W - 1);
     *py = constrain(y, 0, H - 1);
 }
@@ -161,7 +203,55 @@ bool touchGetTap(int16_t* px, int16_t* py)
         }
     }
 
-    // Edge: released -> pressed? Dann einmalig auswerten.
+    // --- Kalibrier-Modus: Ecke nach Ecke erfassen ---
+    if (_calibrating)
+    {
+        if (millis() > _calibDeadline)
+        {
+            // Fenster abgelaufen -> ggf. speichern + beenden
+            if (_calibSamples == 4)
+            {
+                touchSaveCalibration();
+                Serial.println("[CALIB] fertig -> in NVS gespeichert");
+            }
+            else
+            {
+                // Abgebrochen: gueltige Limits wiederherstellen
+                _xMin = _xMinBak; _xMax = _xMaxBak;
+                _yMin = _yMinBak; _yMax = _yMaxBak;
+                Serial.printf("[CALIB] abgebrochen (%d/4 Ecken) -> alte Limits restored\n", _calibSamples);
+            }
+            _calibrating = false;
+            return false;
+        }
+        // bei jedem Finger-Down die aktuelle Ecke mitteln
+        if (pressed && !_wasPressed && _tapCount > 0)
+        {
+            uint16_t rx = (uint16_t)(_tapSumX / _tapCount);
+            uint16_t ry = (uint16_t)(_tapSumY / _tapCount);
+            // Grenzen exakt auf die echte Panel-Range setzen
+            if (_calibSamples == 0 || rx < _xMin) _xMin = rx;
+            if (_calibSamples == 0 || rx > _xMax) _xMax = rx;
+            if (_calibSamples == 0 || ry < _yMin) _yMin = ry;
+            if (_calibSamples == 0 || ry > _yMax) _yMax = ry;
+            _calibSamples++;
+            Serial.printf("[CALIB] Ecke %d: RX=%u RY=%u (MinX=%u MaxX=%u MinY=%u MaxY=%u)\n",
+                           _calibSamples, rx, ry, _xMin, _xMax, _yMin, _yMax);
+        }
+        // Akkumulatoren zuruecksetzen (wie bei normalem Tap)
+        if (!pressed)
+        {
+            _wasPressed = false;
+            _tapSumX = _tapSumY = 0;
+            _tapCount = 0;
+        }
+        else
+        {
+            _wasPressed = true;
+        }
+        return false;   // im Kalib-Modus keine normalen Taps auswerten
+    }
+
     if (pressed && !_wasPressed)
     {
         // Wenn wir mind. 1 Sample haben, gemittelte Rohwerte nehmen
@@ -172,9 +262,12 @@ bool touchGetTap(int16_t* px, int16_t* py)
             ry = (uint16_t)(_tapSumY / _tapCount);
         }
         // Auf Display-Pixel mappen (Auto-Calib-Grenzen)
+        // Guard gegen min==max (wuerde sonst map()-Fehler ausloesen)
         const int16_t W = 240, H = 320;
-        *px = constrain((int16_t)map((int)rx, (int)_xMin, (int)_xMax, 0, W - 1), 0, W - 1);
-        *py = constrain((int16_t)map((int)ry, (int)_yMin, (int)_yMax, 0, H - 1), 0, H - 1);
+        int16_t mx = (_xMax > _xMin) ? (int)map((int)rx, (int)_xMin, (int)_xMax, 0, W - 1) : (W - 1) / 2;
+        int16_t my = (_yMax > _yMin) ? (int)map((int)ry, (int)_yMin, (int)_yMax, 0, H - 1) : (H - 1) / 2;
+        *px = constrain(mx, 0, W - 1);
+        *py = constrain(my, 0, H - 1);
         _wasPressed = true;
         return true;   // << ein Tap, genau einmal
     }
@@ -187,4 +280,21 @@ bool touchGetTap(int16_t* px, int16_t* py)
         _tapCount = 0;
     }
     return false;
+}
+
+void touchStartCalibration()
+{
+    // Gueltige Limits sichern (bei Abbruch wiederherstellen)
+    _xMinBak = _xMin; _xMaxBak = _xMax;
+    _yMinBak = _yMin; _yMaxBak = _yMax;
+
+    _calibrating  = true;
+    _calibDeadline = millis() + 12000;   // 12 s Fenster
+    _calibSamples  = 0;
+    _tapSumX = _tapSumY = 0;
+    _tapCount = 0;
+    _wasPressed = false;
+    // Start-Range zuruecksetzen, damit Ecke 1 die Baseline setzt
+    _xMin = 4095; _xMax = 0; _yMin = 4095; _yMax = 0;
+    Serial.println("[CALIB] Starte: alle 4 Ecken nacheinander antippen (12 s)");
 }
