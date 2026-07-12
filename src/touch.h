@@ -63,6 +63,21 @@ bool touchIsPressed();
 void touchGetCalibrated(int16_t* px, int16_t* py);
 
 /**
+ * @brief Edge-Detection (PacoMouseCYD-Prinzip): liefert genau EINMAL
+ *        true, wenn ein neuer Finger-Down erkannt wurde.
+ *
+ * @param[out] px  Zeiger auf int16_t, erhaelt den *gemittelten* x-Wert
+ * @param[out] py  Zeiger auf int16_t, erhaelt den *gemittelten* y-Wert
+ * @return true genau beim Uebergang released->pressed; dann sind px/py gueltig.
+ * @note Verhindert, dass ein gehaltener Finger (oder Sampleschwankung)
+ *       mehrfach ausgewertet wird ("Nachbartaste schaltet mit").
+ *       Die Koordinate wird intern ueber mehrere Samples gemittelt, um
+ *       Rauschen des resistiven Panels zu glaetten.
+ *       Erst beim naechsten Loslassen (released) wird wieder scharfgeschaltet.
+ */
+bool touchGetTap(int16_t* px, int16_t* py);
+
+/**
  * @brief Gibt die aktuell gelernten Auto-Kalibrierungsgrenzen zurueck.
  *
  * @param[out] xMin,xMax,yMin,yMax  Roh-Grenzen des Panels

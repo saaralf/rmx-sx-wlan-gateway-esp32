@@ -69,18 +69,17 @@ void loop()
 {
     commLoop();   // WebSocket Heartbeat + Reconnect
 
-    // --- Touch-Verarbeitung (alle ~30ms) ---
+    // --- Touch-Verarbeitung ---
+    // PacoMouseCYD-Prinzip: EIN Finger-Down = EINE Aktion (Edge-Detection
+    // + Mittelung in touchGetTap). So kann ein gehaltener Finger (oder
+    // Sampleschwankung) nicht benachbarte Buttons mehrfach toggeln.
     static uint32_t lastTouch = 0;
-    static TSPoint tp = {0, 0, 0};
     if (millis() - lastTouch > 30)
     {
         lastTouch = millis();
-        if (touchIsPressed())
+        int16_t px = 0, py = 0;
+        if (touchGetTap(&px, &py))   // true NUR beim Uebergang released->pressed
         {
-            touchSample(&tp);   // touchSample() aktualisiert intern die Auto-Calib-Grenzen
-            int16_t px = 0, py = 0;
-            touchGetCalibrated(&px, &py);
-
             // 1) Geschaeftslogik: State aendern (kein IO)
             bool changed = logicApplyTouch(px, py);
 

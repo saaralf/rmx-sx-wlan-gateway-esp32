@@ -23,6 +23,11 @@ static bool     _haveSample = false;               // wurde schon gesampelt?
 static uint16_t _xMin = TS_MIN_X, _xMax = TS_MAX_X;
 static uint16_t _yMin = TS_MIN_Y, _yMax = TS_MAX_Y;
 
+// Edge-Detection-Zustand (PacoMouseCYD-Prinzip)
+static bool _wasPressed = false;     // war im letzten Zyklus gedrueckt?
+static uint32_t _tapSumX = 0, _tapSumY = 0;   // Akkumulator fuer Mittelung
+static uint8_t  _tapCount = 0;     // Anzahl gemittelter Samples
+
 // ============================================================================
 // Bit-Bang Low-Level: ein Command-Byte (8 Bit) + 12 Datenbits lesen
 // ============================================================================
@@ -139,4 +144,47 @@ void touchGetCalibration(uint16_t* xMin, uint16_t* xMax,
 {
     *xMin = _xMin; *xMax = _xMax;
     *yMin = _yMin; *yMax = _yMax;
+}
+
+bool touchGetTap(int16_t* px, int16_t* py)
+{
+    bool pressed = touchIsPressed();
+
+    if (pressed)
+    {
+        // Rohwerte sammeln fuer Mittelung (nur wenn gueltiges Sample)
+        if (_haveSample)
+        {
+            _tapSumX += _xraw;
+            _tapSumY += _yraw;
+            _tapCount++;
+        }
+    }
+
+    // Edge: released -> pressed? Dann einmalig auswerten.
+    if (pressed && !_wasPressed)
+    {
+        // Wenn wir mind. 1 Sample haben, gemittelte Rohwerte nehmen
+        uint16_t rx = _xraw, ry = _yraw;
+        if (_tapCount > 0)
+        {
+            rx = (uint16_t)(_tapSumX / _tapCount);
+            ry = (uint16_t)(_tapSumY / _tapCount);
+        }
+        // Auf Display-Pixel mappen (Auto-Calib-Grenzen)
+        const int16_t W = 240, H = 320;
+        *px = constrain((int16_t)map((int)rx, (int)_xMin, (int)_xMax, 0, W - 1), 0, W - 1);
+        *py = constrain((int16_t)map((int)ry, (int)_yMin, (int)_yMax, 0, H - 1), 0, H - 1);
+        _wasPressed = true;
+        return true;   // << ein Tap, genau einmal
+    }
+
+    // Finger losgelassen -> Zustaende zuruecksetzen fuer naechsten Tap
+    if (!pressed)
+    {
+        _wasPressed = false;
+        _tapSumX = _tapSumY = 0;
+        _tapCount = 0;
+    }
+    return false;
 }
