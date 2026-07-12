@@ -97,7 +97,8 @@ void loop()
                 {
                     const char* dir = (logicDirection == Direction::FORWARD)
                                         ? "forward" : "reverse";
-                    if (px >= Layout::emergencyButton.x)   // STOP gedrueckt?
+                    // STOP-Button: emergency_stop senden (Speed sofort 0)
+                    if (logicTargetSpeed == 0 && logicSpeed == 0)
                     {
                         commSendEmergencyStop();
                     }
@@ -105,15 +106,13 @@ void loop()
                     {
                         commSendDrive(logicAddress, logicTargetSpeed, dir);
                     }
-                    // F0 (Licht) gesondert senden
-                    if (logicLightOn != logicFunctions[0].active)
-                    {
-                        // (F0 wird hier ueber function 0 abgebildet)
-                    }
+                    // Licht (F0) gesondert senden
                     commSendFunction(logicAddress, 0, logicLightOn);
+                    // Aktive Zusatzfunktionen F1..F16 senden
                     for (int i = 0; i < 16; i++)
                         if (logicFunctions[i].active)
-                            commSendFunction(logicAddress, logicFunctions[i].functionNumber, true);
+                            commSendFunction(logicAddress,
+                                             logicFunctions[i].functionNumber, true);
                     logicDirtyDrive = false;
                 }
             }
