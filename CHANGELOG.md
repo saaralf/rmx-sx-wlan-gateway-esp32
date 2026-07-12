@@ -10,6 +10,14 @@ FW_VERSION, Tag und Log jederzeit nachvollziehbar sind.
 
 ---
 
+## [v0.2.6] - 2026-07-13
+### Behoben (Display, Bugfix #2)
+- **FW-Version oben links weiterhin unsichtbar (v0.2.5):** Das Lok-Panel `Layout::locomotive = {4,4,232,38}` uebermalt die Ecke (4,4) komplett — die weisse Version lag UNTER dem Panel.
+  Fix: `guiDrawScreen()` zeichnet `FW_VERSION` JETZT NACH `drawLocomotive()` (on top), Position (6,6), Textfarbe `TFT_WHITE` auf `COLOR_PANEL` (Kontrast).
+### Technik / Verifikation
+- `pio run` SUCCESS.
+- Bump v0.2.5 -> v0.2.6 (Code-Change ggü. v0.2.5).
+
 ## [v0.2.5] - 2026-07-13
 ### Behoben (Display, Bugfix)
 - **FW-Version oben links sichtbar:** `gui.cpp` zeichnete `FW_VERSION` in `TFT_DARKGREY` auf `COLOR_BACKGROUND` (= ebenfalls `TFT_DARKGREY`) — identische Farbe, Text unsichtbar. Textfarbe auf `TFT_WHITE` geaendert (Kontrast).

@@ -393,10 +393,6 @@ void guiBegin()
 void guiDrawScreen()
 {
     guiTft.fillScreen(COLOR_BACKGROUND);
-    // FW-Version oben links
-    guiTft.setTextDatum(TL_DATUM);
-    guiTft.setTextColor(TFT_WHITE, COLOR_BACKGROUND);
-    guiTft.drawString(FW_VERSION, 4, 4, 1);
 
     drawLocomotive();
     drawLocName();
@@ -407,6 +403,13 @@ void guiDrawScreen()
     drawThrottle();
     drawBottomControls();
     drawStatusBar();
+
+    // FW-Version oben links: MUSS nach drawLocomotive() kommen, da das
+    // Lok-Panel (Layout::locomotive = {4,4,...}) die Ecke (4,4) uebermalt.
+    // Text auf Panel-Farbe (nicht auf BACKGROUND) legen -> Kontrast weiss.
+    guiTft.setTextDatum(TL_DATUM);
+    guiTft.setTextColor(TFT_WHITE, COLOR_PANEL);
+    guiTft.drawString(FW_VERSION, 6, 6, 1);
 }
 
 /**
