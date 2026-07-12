@@ -395,7 +395,7 @@ void guiDrawScreen()
     guiTft.fillScreen(COLOR_BACKGROUND);
     // FW-Version oben links
     guiTft.setTextDatum(TL_DATUM);
-    guiTft.setTextColor(TFT_DARKGREY, COLOR_BACKGROUND);
+    guiTft.setTextColor(TFT_WHITE, COLOR_BACKGROUND);
     guiTft.drawString(FW_VERSION, 4, 4, 1);
 
     drawLocomotive();
