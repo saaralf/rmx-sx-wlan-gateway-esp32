@@ -10,6 +10,23 @@ FW_VERSION, Tag und Log jederzeit nachvollziehbar sind.
 
 ---
 
+## [v0.2.12] - 2026-07-13
+### Behoben (WURZELURSACHE: falscher Gateway-Host)
+- **Befund (USER, v0.2.11):** Display zeigt nur rotes "GW: ?", KEIN graues
+  "0.1.1". Ursache war NICHT die Anzeige, sondern die Netzverbindung:
+  `GW_HOST` war auf "192.168.50.1" gesetzt, der Gateway-Daemon laeuft
+  ABER auf dem Raspi unter 192.168.0.87:8080. 192.168.50.1 ist vom
+  ESP/Netz nicht erreichbar -> kein hello_ack -> gwVersion leer -> "GW: ?".
+- **Verifiziert:** Roher WebSocket-Handshake gegen 127.0.0.1:8080 (Pi) liefert
+  `{"type":"hello_ack","server":"rmx-sx-gateway","server_version":"0.1.0",
+  "status":"ready"}`. Der Daemon antwortet mit **0.1.0** (nicht 0.1.1 — die
+  gelieferte SERVER_VERSION im Daemon weicht von __version__ ab; unkritisch).
+- **Fix:** `GW_HOST` in platformio.ini (massgebend) + config.h auf
+  "192.168.0.87" gesetzt. Port 8080 bleibt offen.
+- `config.h` FW_VERSION v0.2.11 -> v0.2.12 (Pflicht-Bump).
+### Technik / Verifikation
+- `pio run` SUCCESS. GW_HOST 192.168.0.87 (Pi-IP, Port 8080 offen).
+
 ## [v0.2.11] - 2026-07-13
 ### Behoben (rotes "?"-Artefakt nach hello_ack)
 - **Befund (USER, v0.2.10):** Nach hello_ack wurde grau "0.1.1" gezeigt,
