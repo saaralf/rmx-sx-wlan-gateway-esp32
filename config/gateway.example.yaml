@@ -1,0 +1,90 @@
+# Example gateway configuration
+# Copy to /etc/rmx-sx-gateway/gateway.yaml and adapt. Validate at startup.
+
+server:
+  host: 0.0.0.0
+  port: 8080
+  log_level: INFO
+  max_clients: 10
+  max_message_size: 16384
+  heartbeat_timeout_seconds: 30
+  log_dir: /var/log/rmx-sx-gateway
+
+wifi:
+  ssid: Modellbahn-Fahrregler
+  password: bitte-aendern
+  network: 192.168.50.0/24
+  gateway: 192.168.50.1
+  dhcp_start: 192.168.50.100
+  dhcp_end: 192.168.50.200
+  country: DE
+  channel: 6
+  interface: wlan0
+
+safety:
+  stop_on_client_disconnect: false
+  client_disconnect_timeout_seconds: 30
+  reject_commands_when_interface_offline: true
+
+interfaces:
+  - id: rmx-main
+    type: RMX952
+    device: /dev/serial/by-id/usb-Rautenhaus-RMX952_...
+    enabled: false          # set true only after RMX driver is implemented
+    baudrate: 57600
+    buses:
+      - RMX0
+      - RMX1
+    speed_steps: 32
+
+  - id: sx-main
+    type: SX825
+    device: /dev/serial/by-id/usb-Rautenhaus-SX825_...
+    enabled: false          # set true only after SX driver is implemented
+    baudrate: 57600
+    buses:
+      - SX0
+      - SX1
+    speed_steps: 32
+
+  - id: sim1
+    type: Simulator
+    device: simulator://internal
+    enabled: true
+    buses:
+      - RMX0
+      - SX0
+    speed_steps: 32
+
+locomotives:
+  - id: br110
+    name: BR 110 238-3
+    interface: sim1
+    bus: RMX0
+    address: 110
+    speed_steps: 31
+    visible_functions:
+      - 1
+      - 2
+      - 3
+      - 4
+      - 9
+      - 10
+      - 11
+      - 12
+
+  - id: br218
+    name: BR 218
+    interface: sim1
+    bus: SX0
+    address: 42
+    speed_steps: 31
+    visible_functions:
+      - 1
+      - 2
+      - 5
+      - 6
+      - 7
+      - 8
+      - 14
+      - 16

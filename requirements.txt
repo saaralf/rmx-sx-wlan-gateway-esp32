@@ -1,0 +1,13 @@
+# Core runtime dependencies (Raspberry Pi OS / Debian)
+aiohttp>=3.9
+pydantic>=2.5
+PyYAML>=6.0
+pyserial>=3.5
+pyserial-asyncio>=0.6
+
+# Optional: journald logging support (systemd-python). Install separately if needed:
+# systemd-python>=235
+
+# Development / test dependencies
+pytest>=8.0
+pytest-asyncio>=0.23

@@ -3,3 +3,7 @@
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/ipch
+
+# Lokale Zugangsdaten (WLAN-Passwort) - NIEMALS committen
+secrets.env
+*.local

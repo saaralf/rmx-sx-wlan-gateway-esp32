@@ -1,0 +1,23 @@
+[Unit]
+Description=RMX/SX WLAN Gateway (ESP32 throttle bridge)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Installed by scripts/install.sh; path may be adjusted by the installer.
+ExecStartPre=/bin/sleep 2
+ExecStart=/opt/rmx-sx-wlan-gateway/.venv/bin/python -m rmx_sx_gateway.main -c /etc/rmx-sx-gateway/gateway.yaml
+WorkingDirectory=/opt/rmx-sx-wlan-gateway
+Restart=on-failure
+RestartSec=5
+User=rmxsx
+Group=dialout
+# No internet access required; run fully offline.
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/var/log/rmx-sx-gateway /run/rmx-sx-gateway
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+
+[Install]
+WantedBy=multi-user.target
