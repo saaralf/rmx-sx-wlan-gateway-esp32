@@ -39,6 +39,7 @@ extern FunctionConfig logicFunctions[16];
 // "Dirty"-Flags: was muss an das Gateway gesendet werden?
 extern bool logicDirtyDrive;        //!< Geschwindigkeit/Richtung aenderung offen
 extern bool logicDirtySelect;       //!< Lokwechsel offen
+extern bool logicEmergencyStopRequested;  //!< STOP-Taster: emergency_stop senden
 
 /**
  * @brief Initialisiert den Logic-Zustand mit Demo-Werten.
@@ -69,8 +70,10 @@ bool logicApplyTouch(int16_t px, int16_t py);
  * @param dir   "forward" / "reverse"
  * @param fnStates  Array der Laenge 16 mit Funktionszustaenden (true=an)
  * @return void
- * @note Nur wirksam, wenn addr == logicAddress. Synchronisiert Ist-Speed
- *       und Funktionen mit dem Gateway (Single Source of Truth).
+ * @note Adoptiert Adressen, die der Raspi (kuenftige Multiprotokoll-Zentrale)
+ *       vorgibt — die UI folgt fremden Adress-/Status-Vorgaben (Single Source
+ *       of Truth liegt beim Raspi). Speed/Funktionen/Direction werden 1:1
+ *       uebernommen.
  */
 void logicSetState(uint8_t addr, int speed, const char* dir,
                    const bool fnStates[16]);

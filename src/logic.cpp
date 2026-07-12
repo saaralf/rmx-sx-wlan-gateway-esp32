@@ -29,6 +29,7 @@ FunctionConfig logicFunctions[16] =
 
 bool logicDirtyDrive  = false;
 bool logicDirtySelect = false;
+bool logicEmergencyStopRequested = false;
 
 // ---- Hilfsfunktion --------------------------------------------------------
 static bool pointInRect(int16_t x, int16_t y, const Rect& r)
@@ -143,9 +144,13 @@ bool logicApplyTouch(int16_t px, int16_t py)
     }
     if (pointInRect(px, py, Layout::emergencyButton))
     {
+        // STOP-Taster: expliziter emergency_stop. Flag fuer main.cpp, damit
+        // NUR dieser Taster emergency_stop sendet (nicht jeder normale
+        // Geschwindigkeits-0 ueber Slider/Gas). Speed sofort 0.
         logicTargetSpeed = 0;
         logicSpeed = 0;
-        logicDirtyDrive = true;   // sendEmergencyStop erfolgt ueber comm
+        logicEmergencyStopRequested = true;
+        logicDirtyDrive = true;
         return true;
     }
 
