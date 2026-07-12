@@ -119,6 +119,9 @@ bool logicApplyTouch(int16_t px, int16_t py)
     // --- Untere Steuerbuttons ---
     if (pointInRect(px, py, Layout::accelerateButton))
     {
+        // ABSLOUT: Ziel um +5 erhoehen (Bereich 0..99). Der Raspi kann die
+        // Basis via logicSetState() ueberschreiben; danach zaehlt der Taster
+        // von der neuen Basis weiter.
         logicTargetSpeed = min(99, logicTargetSpeed + 5);
         logicDirtyDrive = true;
         return true;
