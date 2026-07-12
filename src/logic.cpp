@@ -128,12 +128,15 @@ bool logicApplyTouch(int16_t px, int16_t py)
     }
     if (pointInRect(px, py, Layout::forwardButton))
     {
+        // Direction FORWARD setzen. Wird im dirtyDrive-Block als drive-Nachricht
+        // gesendet; Raspi kann die Richtung via logicSetState() ueberschreiben.
         logicDirection = Direction::FORWARD;
         logicDirtyDrive = true;
         return true;
     }
     if (pointInRect(px, py, Layout::reverseButton))
     {
+        // Direction REVERSE setzen (siehe forwardButton-Kommentar).
         logicDirection = Direction::REVERSE;
         logicDirtyDrive = true;
         return true;
