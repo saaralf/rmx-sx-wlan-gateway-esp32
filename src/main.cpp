@@ -107,11 +107,14 @@ void loop()
                     }
                     // Licht (F0) gesondert senden
                     commSendFunction(logicAddress, 0, logicLightOn);
-                    // Aktive Zusatzfunktionen F1..F16 senden
+                    // ALLE Zusatzfunktionen F1..F16 explicit senden (true/false),
+                    // nicht nur die aktiven — sonst bleibt ein AUS-Toggle beim
+                    // Raspi/Zentrale haengen (wir muessen unsere Aenderungen
+                    // vollstaendig zurueckschreiben).
                     for (int i = 0; i < 16; i++)
-                        if (logicFunctions[i].active)
-                            commSendFunction(logicAddress,
-                                             logicFunctions[i].functionNumber, true);
+                        commSendFunction(logicAddress,
+                                         logicFunctions[i].functionNumber,
+                                         logicFunctions[i].active);
                     logicDirtyDrive = false;
                 }
             }
