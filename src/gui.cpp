@@ -16,6 +16,7 @@
 #include "logic.h"
 #include "types.h"
 #include "config.h"
+#include "comm.h"   // gwVersion (Gateway-Version aus hello_ack)
 #include <Arduino.h>
 #include <TFT_eSPI.h>
 #include <SPI.h>
@@ -154,6 +155,16 @@ static void drawStatusBar()
     const Rect& r = Layout::locomotive;
     guiTft.fillCircle(r.x + r.w - 12, r.y + 19, 5,
                       logicOnline ? TFT_GREEN : TFT_RED);
+
+    // Gateway-Version unten rechts (aus hello_ack.server_version).
+    // Rechtsbuendig (TR_DATUM) bei x=235, y=312. Grau auf Hintergrund,
+    // damit nicht mit den unteren Steuerbuttons kollidiert.
+    if (strlen(gwVersion) > 0)
+    {
+        guiTft.setTextDatum(TR_DATUM);
+        guiTft.setTextColor(TFT_LIGHTGREY, COLOR_BACKGROUND);
+        guiTft.drawString(gwVersion, 235, 312, 1);
+    }
 }
 
 /**

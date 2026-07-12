@@ -10,6 +10,18 @@ FW_VERSION, Tag und Log jederzeit nachvollziehbar sind.
 
 ---
 
+## [v0.2.7] - 2026-07-13
+### Feature (Gateway-Version im UI)
+- **Gateway-Version unten rechts in der Statusleiste sichtbar:** `comm.cpp`
+  parst `hello_ack.server_version` (vom Raspi-Gateway gesendet) und speichert
+  es in `gwVersion`. `gui.cpp::drawStatusBar()` zeichnet die Version bei
+  (235,312) rechtsbuendig in `TFT_LIGHTGREY` (grau auf Hintergrund).
+- `comm.h`: `extern const char* gwVersion` deklariert.
+- `gui.cpp`: `#include "comm.h"` ergaenzt.
+### Technik / Verifikation
+- `pio run` SUCCESS.
+- Bump v0.2.6 -> v0.2.7 (Code-Change ggü. v0.2.6).
+
 ## [v0.2.6] - 2026-07-13
 ### Behoben (Display, Bugfix #2)
 - **FW-Version oben links weiterhin unsichtbar (v0.2.5):** Das Lok-Panel `Layout::locomotive = {4,4,232,38}` uebermalt die Ecke (4,4) komplett — die weisse Version lag UNTER dem Panel.

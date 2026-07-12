@@ -17,6 +17,9 @@ static WebSocketsClient ws;
 static uint32_t   seqCounter = 0;
 static CommCallbacks gCb;
 
+// Gateway-Version aus hello_ack.server_version (fuer Statusleisten-Anzeige).
+const char* gwVersion = "";
+
 // ---- WiFi ----------------------------------------------------------------
 static void connectWiFi()
 {
@@ -161,7 +164,10 @@ static void webSocketEvent(WStype_t type, uint8_t* payload, size_t length)
             }
             else if (strcmp(t, "hello_ack") == 0)
             {
-                Serial.println("[RX] hello_ack -> ready");
+                const char* sv = doc["server_version"] | "";
+                if (strlen(sv) > 0)
+                    gwVersion = sv;   // Gateway-Version fuer Statusleiste speichern
+                Serial.printf("[RX] hello_ack -> ready (gw %s)\n", gwVersion);
                 if (gCb.onRedraw) gCb.onRedraw();
             }
             // command_ack: bewusst ohne Aktion

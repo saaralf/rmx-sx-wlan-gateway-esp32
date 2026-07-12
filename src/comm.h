@@ -88,4 +88,11 @@ void commSendRequestState(uint8_t address);
  */
 void commSendEmergencyStop();
 
+/**
+ * @brief Gateway-Version, aus dem WebSocket-Handshake (hello_ack.server_version)
+ *        uebernommen. Leer ("") bis zum ersten erfolgreichen hello_ack.
+ *        Wird in der Statusleiste (gui.cpp) angezeigt.
+ */
+extern const char* gwVersion;
+
 #endif // COMM_H
