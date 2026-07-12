@@ -96,10 +96,13 @@ void loop()
                 {
                     const char* dir = (logicDirection == Direction::FORWARD)
                                         ? "forward" : "reverse";
-                    // STOP-Button: emergency_stop senden (Speed sofort 0)
-                    if (logicTargetSpeed == 0 && logicSpeed == 0)
+                    // STOP-Taster: emergency_stop senden (sofortiger Halt).
+                    // Nur wenn der Taster explizit gedrueckt wurde — ein
+                    // normales "Speed 0" ueber Slider/Gas sendet drive speed=0.
+                    if (logicEmergencyStopRequested)
                     {
                         commSendEmergencyStop();
+                        logicEmergencyStopRequested = false;
                     }
                     else
                     {
