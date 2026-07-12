@@ -80,6 +80,9 @@ bool logicApplyTouch(int16_t px, int16_t py)
         const int16_t separatorX = r.x + r.w - 18;
         if (px >= separatorX)
         {
+            // Bereich 1..255 (DCC-kompatibel). Hinweis: Selectrix/RMX/SLX
+            // kennt nur 112 Adressen (0..111); die Obergrenze ist bewusst
+            // weiter gefasst, bis der Raspi die Protokoll-Grenze vorgibt.
             if (py < r.y + r.h / 2) logicAddress = min(255, (int)logicAddress + 1);
             else                     logicAddress = max(1,   (int)logicAddress - 1);
             logicDirtySelect = true;
