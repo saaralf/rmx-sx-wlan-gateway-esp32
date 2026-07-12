@@ -160,10 +160,11 @@ static void drawStatusBar()
     // (6,15)). Bewusst NICHT unten rechts: die Debug-Leiste (T:N) liegt bei
     // y~305 und ueberschreibt dort alles. (6,15) ist auf COLOR_PANEL sicher.
     // gwVersion ist ein statischer Puffer in comm.cpp (siehe comm.h).
-    // Sichtbares Fallback: wenn noch KEIN hello_ack empfangen wurde
-    // (gwVersion leer, z.B. Gateway nicht erreichbar / Handshake fehlgeschlagen),
-    // zeigen wir "GW: ?" in ROT. So ist am Display sofort erkennbar, ob der
-    // Handshake fehlschlaegt — ohne Serial-Log.
+    // Textbereich (6,15) VOR dem Zeichnen mit Panel-Farbe loeschen, damit
+    // kein Rest der VORHERIGEN Variante haengen bleibt. Wichtig: "GW: ?" ist
+    // 6 Zeichen breit, die echte Version (z.B. "0.1.1") nur 5 — ohne Clear
+    // bliebe das rote "?" rechts als Rest stehen (Artefakt nach hello_ack).
+    guiTft.fillRect(6, 15, 44, 9, COLOR_PANEL);
     guiTft.setTextDatum(TL_DATUM);
     if (strlen(gwVersion) > 0)
     {

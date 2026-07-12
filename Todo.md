@@ -159,7 +159,26 @@ Aufgaben:
 - [x] Z7-T2  gui.cpp: "GW: ?" (ROT) Fallback + drawStatusBar() zuletzt.
 - [x] Z7-T3  config.h FW_VERSION v0.2.10 + CHANGELOG + Todo.
 - [x] Z7-T4  pio run SUCCESS, Branch, PR #30, Tag v0.2.10 + push.
-- [ ] Z7-T5  (USER) Hardware-Test v0.2.10:
-           1. steht "0.1.1" (grau) unter v0.2.10? -> hello_ack OK.
-           2. ODER steht "GW: ?" (ROT)? -> hello_ack KOMMT NICHT AN.
+- [ ] Z7-T5  (USER) Hardware-Test v0.2.10: 1. JA (0.1.1 grau) + 2. JA (rotes ?).
+           => BEIDES gleichzeitig unmoeglich -> Artefakt: rotes "?" blieb rechts
+           als Rest vom Boot-Fallback "GW: ?" stehen, weil graue Version kuerzer.
+           => hello_ack-Pfad FUNKTIONIERT. Zyklus 8 (v0.2.11) raeumt den Rest weg.
+
+==================================================================
+Zyklus 8: rotes "?"-Artefakt entfernen (v0.2.11)
+==================================================================
+Befund (USER, v0.2.10): "0.1.1" grau sichtbar (hello_ack OK!) + rotes "?"
+  daneben. Ursache: Boot-Fallback "GW: ?" (6 Zch, rot) wurde von kuerzerer
+  Version (5 Zch, grau) nicht voll uebermalt -> roter Rest haengt.
+  Fix: Textbereich (6,15,44,9) VOR dem Zeichnen mit COLOR_PANEL loeschen.
+Aufgaben:
+- [x] Z8-T1  gui.cpp drawStatusBar: fillRect(6,15,44,9,COLOR_PANEL) vor Text.
+           (Achtung: Patch hatte dabei die "} von drawStatusBar geloescht ->
+            wieder eingefuegt + verifiziert.)
+- [x] Z8-T2  config.h FW_VERSION v0.2.11.
+- [x] Z8-T3  CHANGELOG v0.2.11 + Z7-T5 Interpretation + Zyklus 8.
+- [x] Z8-T4  pio run SUCCESS, Branch, PR #31, Tag v0.2.11 + push.
+- [ ] Z8-T5  (USER) Hardware-Test v0.2.11:
+           1. steht NUR "0.1.1" (grau) unter v0.2.11? (rot weg)
+           2. KEIN rotes "?" mehr?
            Antwort: 1. ja/nein  2. ja/nein
