@@ -11,6 +11,14 @@ FW_VERSION, Tag und Log jederzeit nachvollziehbar sind.
 ---
 
 ## [Unreleased]
+### Infrastruktur (Pi-Gateway, Issue #4)
+- **Verbindung ESP32↔Pi komplett**: Daemon (`rmx-sx-gateway`, Port 8080) + WLAN-AP
+  (`Modellbahn-Fahrregler`, 192.168.50.1, DHCP .100-.200) auf dem Pi in Betrieb.
+- Daemon-Start-Fix: `tmpfiles.d/rmx-sx-gateway.conf` (Reboot-festes `/run/rmx-sx-gateway`).
+- AP-Fix: `rfkill unblock wifi` + dhcpcd-static-IP; neue `rfkill-unblock-wifi.service`
+  (Before=hostapd) für Reboot-Festigkeit.
+- **Verifiziert**: ESP32 erhält DHCP-Lease `192.168.50.199`, WS-`hello` beim Daemon
+  registriert → Bidirektionale Verbindung steht.
 
 ## [v0.2.3] - 2026-07-12
 ### Geändert (Touch-Kalibrierung — Kernänderung)
