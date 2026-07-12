@@ -156,9 +156,10 @@ static void drawStatusBar()
     guiTft.fillCircle(r.x + r.w - 12, r.y + 19, 5,
                       logicOnline ? TFT_GREEN : TFT_RED);
 
-    // Gateway-Version oben links UNTER der FW-Version (auf dem Lok-Panel),
-    // damit sie NICHT mit der unteren Debug-Leiste (T:N bei y~305) kollidiert.
-    // Platz: FW_VERSION bei (6,6), GW-Version bei (6,15) — beide auf COLOR_PANEL.
+    // Gateway-Version oben links UNTER der FW-Version (auf dem Lok-Panel bei
+    // (6,15)). Bewusst NICHT unten rechts: die Debug-Leiste (T:N) liegt bei
+    // y~305 und ueberschreibt dort alles. (6,15) ist auf COLOR_PANEL sicher.
+    // gwVersion ist ein statischer Puffer in comm.cpp (siehe comm.h).
     if (strlen(gwVersion) > 0)
     {
         guiTft.setTextDatum(TL_DATUM);
