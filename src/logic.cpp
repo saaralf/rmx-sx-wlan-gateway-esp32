@@ -144,6 +144,10 @@ bool logicApplyTouch(int16_t px, int16_t py)
     }
 
     // --- Throttle-Slide (vertikal -> Zielgeschwindigkeit) ---
+    // ABSOLUT: Slider-Position mapped direkt auf logicTargetSpeed (0..99).
+    // Nicht relativ zum aktuellen Wert addieren. Der Raspi/Zentrale uebersetzt
+    // das in das jeweilige Protokoll (Selectrix/RMX/DCC). Umgekehrt adoptiert
+    // logicSetState() Speed-Vorgaben des Raspi 1:1 (UI folgt dem Raspi).
     const Rect& slider = Layout::throttle;
     if (px >= slider.x - 6 && px <= slider.x + slider.w + 6 &&
         py >= slider.y && py <= slider.y + slider.h)
