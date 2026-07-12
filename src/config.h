@@ -16,12 +16,16 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#ifndef DEBUG_OVERLAY
+#define DEBUG_OVERLAY 0            //!< Debug-Overlay (T:N + L) per Default AUS
+#endif
+
 #include <Arduino.h>
 
 // ---- Firmware-Version ------------------------------------------------------
 // Wird oben links auf dem Display gedruckt und sollte vor jedem funktionalen
 // Firmware-Test gebumppt werden (Vorgabe im Projekt).
-#define FW_VERSION "v0.2.7"
+#define FW_VERSION "v0.2.8"
 
 // ---- Gateway-Verbindung (ueberschreibbar via platformio.ini build_flags) ---
 #ifndef GW_HOST

@@ -131,7 +131,11 @@ void loop()
         }
     }
 
-    // --- Diagnose-Leiste (alle ~150ms) ---
+    // --- Diagnose-Leiste (alle ~150ms, NUR bei DEBUG_OVERLAY) -------------
+    // T:N (Touch) + L (Loop-Counter) sind reine Debug-Overlays und ueberschreiben
+    // sonst untere/obere Display-Bereiche. Per Default AUS (sauberes Produktivbild).
+    // Einschalten via platformio.ini: -D DEBUG_OVERLAY=1
+#ifdef DEBUG_OVERLAY
     static uint32_t lastDbg = 0;
     static uint32_t loopCount = 0;
     loopCount++;
@@ -146,6 +150,7 @@ void loop()
         guiDrawDebugTouch(pressed, (int16_t)d.x, (int16_t)d.y, px, py);
         guiDrawLoopCounter(loopCount / 10);
     }
+#endif
 
     // --- Serial-Kommando "calib": manuelle Touch-Ecken-Kalibrierung ---
     static String serialLine = "";

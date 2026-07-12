@@ -10,6 +10,22 @@ FW_VERSION, Tag und Log jederzeit nachvollziehbar sind.
 
 ---
 
+## [v0.2.8] - 2026-07-13
+### Behoben (Gateway-Version sichtbar) + Debug-Flag
+- **Bugfix:** Gateway-Version (aus `hello_ack.server_version`) lag bei (235,312)
+  — genau im Bereich der `T:N`-Debug-Leiste (y~305), die sie bei jedem 150ms-Tick
+  ueberschrieb. Neu: GW-Version oben links UNTER FW_VERSION (6,15) auf dem
+  Lok-Panel (COLOR_PANEL) — nie vom Debug-Bar betroffen.
+- **Debug-Overlay flaggbar:** `T:N` (Touch-Leiste) + `L` (Loop-Counter) in
+  `main.cpp` jetzt hinter `#ifdef DEBUG_OVERLAY`. Per Default AUS (sauberes
+  Produktivbild). Einschalten via `platformio.ini`: `-D DEBUG_OVERLAY=1`.
+  `DEBUG_OVERLAY` Default 0 in `config.h`.
+- `config.h` FW_VERSION v0.2.7 -> v0.2.8 (Pflicht-Bump).
+- Befund aus Hardware-Test v0.2.7 (USER): GW-Version nicht sichtbar -> durch
+  T:N-Ueberlappung bestaetigt, hier behoben.
+### Technik / Verifikation
+- `pio run` SUCCESS.
+
 ## [v0.2.7] - 2026-07-13
 ### Feature (Gateway-Version im UI)
 - **Gateway-Version unten rechts in der Statusleiste sichtbar:** `comm.cpp`
