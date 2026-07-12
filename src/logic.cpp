@@ -158,7 +158,16 @@ bool logicApplyTouch(int16_t px, int16_t py)
 void logicSetState(uint8_t addr, int speed, const char* dir,
                    const bool fnStates[16])
 {
-    if (addr != logicAddress) return;   // nur unsere Lok
+    // Architektur: die UI adoptiert ALLES, was der Raspi (kuenftige
+    // Multiprotokoll-Zentrale) meldet. Wenn ein anderer Regler/das Gateway
+    // eine andere Adresse steuert, uebernehmen wir sie statt sie zu ignorieren.
+    if (addr != logicAddress)
+    {
+        logicAddress = addr;          // aktive Lok vom Raspi uebernehmen
+        logicDirtySelect = true;      // main.cpp fragt select_loco + request_state
+                                      // erneut an, damit der Raspi uns bestaetigt
+        logicSpeed = logicTargetSpeed = 0;
+    }
     logicSpeed = speed;
     if (logicTargetSpeed != speed) logicTargetSpeed = speed;
     logicDirection = (strcmp(dir, "reverse") == 0) ? Direction::REVERSE

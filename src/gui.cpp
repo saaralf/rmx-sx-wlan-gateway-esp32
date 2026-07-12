@@ -183,16 +183,17 @@ static void drawLocomotive()
 
 /**
  * @brief Zeichnet Loknamen-Feld + Dropdown-Pfeil.
- * @param keine (Name statisch "BR 110 238-3")
+ * @param keine (Name folgt der aktiven Adresse: "Lok <logicAddress>")
  * @return void
- * @note Teil des Vollbilds. Statischer Text, keine Logic-Abhaengigkeit.
+ * @note Teil des Vollbilds. Name ist generisch; ein echter Lokname koennte
+ *       spaeter ueber den Gateway-State vom Raspi mitgeliefert werden.
  */
 static void drawLocName()
 {
     const Rect& nameRect = Layout::locomotiveName;
     const Rect& dropRect = Layout::locomotiveDropDown;
     drawBeveledButton(nameRect.x, nameRect.y, nameRect.w, nameRect.h, TFT_WHITE);
-    drawLeftText("BR 110 238-3", nameRect.x + 7, nameRect.y + nameRect.h / 2,
+    drawLeftText("Lok " + String(logicAddress), nameRect.x + 7, nameRect.y + nameRect.h / 2,
                  TFT_BLACK, 4, TFT_WHITE);
     drawBeveledButton(dropRect.x, dropRect.y, dropRect.w, dropRect.h, COLOR_BUTTON);
     guiTft.fillTriangle(dropRect.x + 7,  dropRect.y + 11,
