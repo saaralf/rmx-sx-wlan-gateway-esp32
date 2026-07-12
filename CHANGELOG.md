@@ -10,6 +10,22 @@ FW_VERSION, Tag und Log jederzeit nachvollziehbar sind.
 
 ---
 
+## [v0.2.4] - 2026-07-12
+### Hinzugefügt (Button-Implementierung, Issue #8/#9/#12/#14/#16/#18/#20/#22)
+- **Button 1 (Lok-Dropdown):** Adresse vom Raspi adoptieren (`logicSetState`), Lokname dynamisch (`"Lok <addr>"` statt Hartcode).
+- **Button 2 (Licht F0):** F0 aus `functions["0"]` des Gateway-State übernehmen (Raspi→UI Sync).
+- **Button 3 (Adress-Pfeile +/-):** Bereich 1..255 + Gateway-`select_loco` bei Adresswechsel.
+- **Button 4 (Funktionsspalten F1..F16):** AUS-Toggle-Fix — alle 16 Funktionen explicit (true/false) an Raspi senden.
+- **Button 5 (Throttle-Slider):** Absolut-Semantik — Slider-Position mappt direkt auf Ziel-Speed 0..99.
+- **Button 6 (Gas +5):** Inkrement +5, Bereich 0..99.
+- **Button 7/8 (Vor/Rück):** Direction FORWARD/REVERSE setzen + Raspi-Sync via `logicSetState`.
+- **Button 9 (STOP):** `emergency_stop` NUR bei STOP-Taster (nicht bei jedem Speed=0).
+- **WLAN-Kommunikation:** komplette Verdrahtung Touch→Logic→Comm→Raspi (WebSocket `drive`/`function`/`emergency_stop`/`select_loco`/`request_state` an Gateway Port 8080).
+### Technik / Verifikation
+- `pio run` SUCCESS (RAM 14.3 % / Flash 73.3 %).
+- 9 PRs (#10/#11/#13/#15/#17/#19/#21/#23) als serielle Kette in `main` gemergt.
+- Hinweis: physischer Hardware-Test am CYD (Issue #3) steht noch aus.
+
 ## [Unreleased]
 ### Infrastruktur (Pi-Gateway, Issue #4)
 - **Verbindung ESP32↔Pi komplett**: Daemon (`rmx-sx-gateway`, Port 8080) + WLAN-AP
