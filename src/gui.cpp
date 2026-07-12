@@ -156,14 +156,14 @@ static void drawStatusBar()
     guiTft.fillCircle(r.x + r.w - 12, r.y + 19, 5,
                       logicOnline ? TFT_GREEN : TFT_RED);
 
-    // Gateway-Version unten rechts (aus hello_ack.server_version).
-    // Rechtsbuendig (TR_DATUM) bei x=235, y=312. Grau auf Hintergrund,
-    // damit nicht mit den unteren Steuerbuttons kollidiert.
+    // Gateway-Version oben links UNTER der FW-Version (auf dem Lok-Panel),
+    // damit sie NICHT mit der unteren Debug-Leiste (T:N bei y~305) kollidiert.
+    // Platz: FW_VERSION bei (6,6), GW-Version bei (6,15) — beide auf COLOR_PANEL.
     if (strlen(gwVersion) > 0)
     {
-        guiTft.setTextDatum(TR_DATUM);
-        guiTft.setTextColor(TFT_LIGHTGREY, COLOR_BACKGROUND);
-        guiTft.drawString(gwVersion, 235, 312, 1);
+        guiTft.setTextDatum(TL_DATUM);
+        guiTft.setTextColor(TFT_LIGHTGREY, COLOR_PANEL);
+        guiTft.drawString(gwVersion, 6, 15, 1);
     }
 }
 

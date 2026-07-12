@@ -1,0 +1,122 @@
+# Todo – WLANHandregler (Logregler)
+
+Arbeitsweise (zwingend, seit 2026-07-12):
+1. Aufgaben hier erfassen -> mit User BESPRECHEN (kein Code vor Freigabe).
+2. Nach Freigabe umsetzen -> erneut besprechen.
+3. Testen (Build `pio run` / Gateway `pytest` / Hardware am CYD).
+4. Branch committen + CHANGELOG-Eintrag + PR gegen main mergen.
+5. Naechste Aufgabe = neuer Branch + neue Todos.
+6. JEDER Code-Change (ESP32-UI ODER Gateway) -> neue Version X.Y.Z,
+   im Quellcode (config.h FW_VERSION + CHANGELOG) gefuehrt UND dem User gemeldet.
+7. Isolierte Teilaufgaben an lokales Ollama delegieren
+   (granite4.1:8b-hermes-sx, toolsets terminal+file), nur komprimiertes Ergebnis.
+
+=====================================================================
+ZYKLUS 1: Button-Implementierung (9 Buttons + WLAN-Kommunikation) -> main
+=====================================================================
+Ziel-Version: **v0.2.4**  (Code-Change gegenueber v0.2.3 -> Pflicht-Bump)
+
+Status vorab (verifiziert 2026-07-12):
+- Alle 9 Button-Branches programmiert, stehen auf FW_VERSION v0.2.3.
+- Build `pio run` auf feature/button9-stop: SUCCESS (RAM 14.3% / Flash 73.3%).
+- 9 PRs offen: #10 #11 #13 #15 #17 #19 #21 #23 (Kette main<-#10<-#11<-#13<-#15<-#17<-#19<-#21<-#23).
+- Hardware-Test (Issue #3) noch nicht durchgefuehrt.
+
+Aufgaben:
+- [x] T1  PR-Kette gemergt: #10->#11->#13->#15->#17->#19->#21->#23 (Branch-Protection auf Solo-Dev umgestellt: required_pull_request_reviews=null, enforce_admins=false).
+- [x] T2  Branch `release/v0.2.4` von main angelegt.
+- [x] T3  FW_VERSION in `src/config.h`: "v0.2.3" -> "v0.2.4" (Pflicht-Bump fuer Code-Change).
+- [x] T4  CHANGELOG.md: Block `## [v0.2.4] - 2026-07-12` mit Button-Implementierung + Verifikation (Build SUCCESS).
+- [x] T5  `release/v0.2.4` committet + PR #24 gegen main gemergt (squash).
+- [x] T6  `git tag v0.2.4` (matchet FW_VERSION-String) + push.
+- [x] T7  Hardware-Test am CYD (Issue #3) — USER uebernimmt:
+           OK: Flash, USB Power-Cycle, Lxxx zaehlt, T:Y-Leiste, alle 9 Buttons reagieren.
+           BUG: oben links KEINE Versionsnummer sichtbar (T8 Sub-Agent: timeout -> NA, T4 selbst geschrieben).
+- [ ] T8  (DELEGIERT an Ollama/granite) Sub-Agent TIMEOUT (600s) -> NA. CHANGELOG (T4) selbst geschrieben (Notfall-Regel).
+
+==================================================================
+Zyklus 2: Bugfix FW_VERSION-Sichtbarkeit (Display-Farbe)
+==================================================================
+Befund: gui.cpp:27 COLOR_BACKGROUND = TFT_DARKGREY; gui.cpp:398 setTextColor(TFT_DARKGREY, COLOR_BACKGROUND)
+  -> FW_VERSION wird in DARKGREY auf DARKGREY gezeichnet = unsichtbar.
+  Fix: Textfarbe auf kontrastierend (TFT_WHITE) aendern. Pflicht-Bump -> v0.2.5.
+Aufgaben:
+- [x] Z2-T1  Branch `bugfix/fwversion-visible` von main angelegt.
+- [x] Z2-T2  gui.cpp:398 setTextColor TFT_DARKGREY -> TFT_WHITE (Kontrast).
+- [x] Z2-T3  FW_VERSION v0.2.4 -> v0.2.5 (Pflicht-Bump: Code-Change ggü. v0.2.4).
+- [x] Z2-T4  CHANGELOG Block v0.2.5 (Bugfix FW-Version sichtbar).
+- [x] Z2-T5  pio run SUCCESS, committet, PR #25 ggü. main gemergt (squash).
+- [x] Z2-T6  git tag v0.2.5 + push (matchet FW_VERSION).
+- [x] Z2-T7  (USER) Hardware-Test v0.2.5: Version NICHT sichtbar (2. Ursache: Lok-Panel uebermalt Ecke) -> Zyklus 3.
+
+==================================================================
+Zyklus 3: Bugfix #2 FW_VERSION-Panel-Overlap (v0.2.6)
+==================================================================
+Befund: Lok-Panel Layout::locomotive={4,4,232,38} uebermalt Ecke (4,4) komplett.
+  Version lag UNTER dem Panel -> auch mit weisser Farbe unsichtbar.
+  Fix: FW_VERSION NACH drawLocomotive() zeichnen (on top), Pos (6,6), TFT_WHITE auf COLOR_PANEL.
+Aufgaben:
+- [x] Z3-T1  Branch bugfix/fwversion-panel-overlap von main.
+- [x] Z3-T2  guiDrawScreen(): FW_VERSION nach drawLocomotive() (on top), TFT_WHITE/COLOR_PANEL.
+- [x] Z3-T3  FW_VERSION v0.2.5 -> v0.2.6 (Pflicht-Bump).
+- [x] Z3-T4  CHANGELOG v0.2.6 (Bugfix #2).
+- [x] Z3-T5  pio run SUCCESS, commit, PR #26 ggü. main gemergt.
+- [x] Z3-T6  git tag v0.2.6 + push.
+- [x] Z3-T7  (USER) Hardware-Test v0.2.6: Version "v0.2.6" oben links SICHTBAR (bestätigt). Zyklus 3 final.
+
+Offen danach (kuenftige Zyklen, eigene Branches/Todos):
+- Zyklus 5: RMX952-Treiber (Phase 4) – echtes RMX-Logregler-Ziel (aus RMX-Doku_V5.pdf, jetzt lokal im Gateway-Repo docs/).
+- Zyklus 6: SX852-Protokoll an echter HW klaeren (tools/serial_sniffer.py).
+- Zyklus 7: F0..F16 -> SX-Bit-Mapping Tabelle pro Lok.
+
+==================================================================
+GATEWAY-REPO: rmx-sx-gateway (Raspi-Daemon) — Setup + Versionierung (v0.1.1)
+==================================================================
+Kontext: Quellcode vom Raspi (192.168.0.87:/opt/rmx-sx-gateway) geholt,
+als eigenes Git-Repo initialisiert + zu GitHub gepusht
+(https://github.com/saaralf/rmx-sx-gateway). ESP32-Firmware = eigenes Repo.
+Aufgaben (erledigt 2026-07-13):
+- [x] G1  Passwordless SSH zum Raspi (Key id_ed25519.pub hinterlegt, NO_PW_NEEDED).
+- [x] G2  Gateway-Code vom Pi geholt (tar, ohne .venv/.pytest_cache) -> lokal abgelegt.
+- [x] G3  Eigenes Git-Repo + Initial-Commit + Push zu GitHub.
+- [x] G4  Versionierung: protocol.SERVER_VERSION an __version__ gekoppelt (Single Source).
+- [x] G5  hello_ack.server_version spiegelt echte Gateway-Version an ESP32 (Handshake).
+- [x] G6  systemd service: Pfad /opt/rmx-sx-gateway (war veraltet rmx-sx-wlan-gateway).
+- [x] G7  CHANGELOG.md angelegt (analog ESP32).
+- [x] G8  __version__ 0.1.0 -> 0.1.1 (Pflicht-Bump), commit, PR, Tag v0.1.1 + push.
+
+==================================================================
+Zyklus 4: ESP32 zeigt Gateway-Version (v0.2.7)
+==================================================================
+Befund: Gateway sendet server_version im hello_ack, aber ESP32 zeigte sie nicht an.
+  Fix: comm.cpp parst hello_ack.server_version -> gwVersion; gui.cpp drawStatusBar()
+  zeichnet gwVersion unten rechts (235,312) in TFT_LIGHTGREY.
+Aufgaben:
+- [x] Z4-T1  comm.h: extern const char* gwVersion deklariert.
+- [x] Z4-T2  comm.cpp: hello_ack.server_version parsen -> gwVersion speichern.
+- [x] Z4-T3  gui.cpp: #include comm.h; drawStatusBar() zeigt gwVersion unten rechts.
+- [x] Z4-T4  FW_VERSION v0.2.6 -> v0.2.7 (Pflicht-Bump).
+- [x] Z4-T5  CHANGELOG v0.2.7.
+- [x] Z4-T6  pio run SUCCESS, commit, PR #27 ggü. main gemergt.
+- [x] Z4-T7  git tag v0.2.7 + push.
+- [ ] Z4-T8  (USER) Hardware-Test v0.2.7: GW-Version NICHT sichtbar -> Ursache:
+           lag bei (235,312) im Bereich der T:N-Debug-Leiste (y~305) die sie
+           ueberschrieb. Behoben in Zyklus 5 (v0.2.8).
+
+==================================================================
+Zyklus 5: GW-Version sichtbar + Debug-Overlay-Flag (v0.2.8)
+==================================================================
+Befund (USER, v0.2.7): GW-Version "0.1.1" nicht sichtbar.
+  Ursache: guiDrawDebugTouch() malt schwarzes Rechteck y=305..317 ueber volle
+  Breite -> ueberschreibt gwVersion bei (235,312) jeden 150ms-Tick.
+  Fix: (1) gwVersion nach oben links (6,15) auf Lok-Panel verschieben.
+       (2) T:N + L hinter #ifdef DEBUG_OVERLAY (Default AUS).
+Aufgaben:
+- [x] Z5-T1  gui.cpp: gwVersion nach (6,15) TL_DATUM auf COLOR_PANEL.
+- [x] Z5-T2  main.cpp: T:N + L Aufrufe hinter #ifdef DEBUG_OVERLAY.
+- [x] Z5-T3  config.h: DEBUG_OVERLAY Default 0 + FW_VERSION v0.2.8.
+- [x] Z5-T4  platformio.ini: kommentiertes -D DEBUG_OVERLAY=1.
+- [x] Z5-T5  CHANGELOG v0.2.8 + Z4-T8 vermerkt.
+- [x] Z5-T6  pio run SUCCESS, Branch, PR #28, Tag v0.2.8 + push.
+- [ ] Z5-T7  (USER) Hardware-Test v0.2.8: oben links unter v0.2.8 steht "0.1.1"?
+           Antwort: 1. ja/nein (Debug-Overlay jetzt AUS, keine T:N-Leiste).
