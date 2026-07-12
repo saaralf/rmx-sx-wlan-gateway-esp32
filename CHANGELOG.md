@@ -10,6 +10,21 @@ FW_VERSION, Tag und Log jederzeit nachvollziehbar sind.
 
 ---
 
+## [v0.2.11] - 2026-07-13
+### Behoben (rotes "?"-Artefakt nach hello_ack)
+- **Befund (USER, v0.2.10):** Nach hello_ack wurde grau "0.1.1" gezeigt,
+  ABER rechts davon blieb ein rotes "?" stehen. Ursache: das Boot-Fallback
+  "GW: ?" (6 Zeichen, rot) wurde durch die kuerzere Version (5 Zeichen, grau)
+  nicht vollstaendig uebermalt -> roter "?"-Rest blieb haengen.
+- **Fix:** Vor dem Text wird der Bereich (6,15,44,9) mit COLOR_PANEL
+  geloescht, damit keine Reste der vorherigen Variante stehen bleiben.
+  Damit: hello_ack da -> nur "0.1.1" (grau); nicht da -> nur "GW: ?" (rot).
+- **Kern-Erkenntnis:** Der hello_ack-Pfad FUNKTIONIERT (v0.2.10). Die
+  Gateway-Version wurde also schon seit v0.2.10 korrekt empfangen/gezeigt.
+- `config.h` FW_VERSION v0.2.10 -> v0.2.11 (Pflicht-Bump).
+### Technik / Verifikation
+- `pio run` SUCCESS. Funktions-Abschluss von drawStatusBar() verifiziert.
+
 ## [v0.2.10] - 2026-07-13
 ### Behoben (GW-Version Sichtbarkeit + Diagnose-Fallback)
 - **Sichtbares Fallback:** `drawStatusBar()` zeigt bei leerem `gwVersion`
