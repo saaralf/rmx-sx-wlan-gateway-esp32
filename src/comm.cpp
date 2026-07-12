@@ -8,6 +8,7 @@
 // ============================================================================
 
 #include "comm.h"
+#include "config.h"   // FW_VERSION, GW_* Defines
 #include <WiFi.h>
 #include <WebSocketsClient.h>
 #include <ArduinoJson.h>
