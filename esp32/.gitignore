@@ -1,0 +1,11 @@
+# Build-Output
+.pio/
+.vscode/
+
+# Lokale Zugangsdaten (NIEMALS committen — enthalten WLAN-Passwort)
+secrets.env
+*.local
+
+# PlatformIO
+.pioenvs/
+.piolibdeps/
