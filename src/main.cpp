@@ -131,11 +131,12 @@ void loop()
         }
     }
 
-    // --- Diagnose-Leiste (alle ~150ms, NUR bei DEBUG_OVERLAY) -------------
-    // T:N (Touch) + L (Loop-Counter) sind reine Debug-Overlays und ueberschreiben
-    // sonst untere/obere Display-Bereiche. Per Default AUS (sauberes Produktivbild).
-    // Einschalten via platformio.ini: -D DEBUG_OVERLAY=1
-#ifdef DEBUG_OVERLAY
+    // --- Diagnose-Leiste (alle ~150ms, NUR bei DEBUG_OVERLAY=1) ----------
+    // T:N (Touch) + L (Loop-Counter) sind reine Debug-Overlays. Per Default
+    // AUS (DEBUG_OVERLAY=0 in config.h). Einschalten: platformio.ini
+    // -D DEBUG_OVERLAY=1. ACHTUNG: #if (Wertpruefung), nicht #ifdef —
+    // das Makro ist immer definiert (Wert 0), sonst liefe der Code trotzdem.
+#if DEBUG_OVERLAY
     static uint32_t lastDbg = 0;
     static uint32_t loopCount = 0;
     loopCount++;

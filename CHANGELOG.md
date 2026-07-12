@@ -10,6 +10,21 @@ FW_VERSION, Tag und Log jederzeit nachvollziehbar sind.
 
 ---
 
+## [v0.2.9] - 2026-07-13
+### Behoben (zwei echte Bugs aus Hardware-Test v0.2.8)
+- **Bug 1 — Debug-Overlay lief trotzdem:** `main.cpp` nutzte `#ifdef DEBUG_OVERLAY`.
+  Aber `config.h` definiert das Makro MIT Wert 0 → `#ifdef`=TRUE → T:N + L
+  kompilierten immer rein. Fix: `#if DEBUG_OVERLAY` (Wertpruefung).
+  Bestaetigt durch USER: T:N + L waren bei v0.2.8 noch sichtbar.
+- **Bug 2 — GW-Version Dangling Pointer:** `comm.cpp` speicherte
+  `gwVersion = doc["server_version"]` — `doc` ist lokal im Event, nach dem
+  Event weg → `gwVersion` zeigte auf freigegebenen Speicher (Müll, nichts
+  sichtbar). Fix: statischer `char gwVersionBuf[16]` + `strncpy`. comm.h:
+  `gwVersion` bleibt `const char*` (zeigt auf Puffer).
+- `config.h` FW_VERSION v0.2.8 -> v0.2.9 (Pflicht-Bump).
+### Technik / Verifikation
+- `pio run` SUCCESS. Static Analysis: gwVersionBuf lives for program duration.
+
 ## [v0.2.8] - 2026-07-13
 ### Behoben (Gateway-Version sichtbar) + Debug-Flag
 - **Bugfix:** Gateway-Version (aus `hello_ack.server_version`) lag bei (235,312)

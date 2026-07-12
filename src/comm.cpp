@@ -18,7 +18,10 @@ static uint32_t   seqCounter = 0;
 static CommCallbacks gCb;
 
 // Gateway-Version aus hello_ack.server_version (fuer Statusleisten-Anzeige).
-const char* gwVersion = "";
+// Statischer Puffer (nicht nur Pointer!), da der JSON-Wert aus dem lokalen
+// doc des Events stammt und nach dem Event ungueltig waere (Dangling Pointer).
+static char gwVersionBuf[16] = "";
+const char* gwVersion = gwVersionBuf;
 
 // ---- WiFi ----------------------------------------------------------------
 static void connectWiFi()
@@ -166,7 +169,10 @@ static void webSocketEvent(WStype_t type, uint8_t* payload, size_t length)
             {
                 const char* sv = doc["server_version"] | "";
                 if (strlen(sv) > 0)
-                    gwVersion = sv;   // Gateway-Version fuer Statusleiste speichern
+                {
+                    strncpy(gwVersionBuf, sv, sizeof(gwVersionBuf) - 1);
+                    gwVersionBuf[sizeof(gwVersionBuf) - 1] = '\0';
+                }
                 Serial.printf("[RX] hello_ack -> ready (gw %s)\n", gwVersion);
                 if (gCb.onRedraw) gCb.onRedraw();
             }

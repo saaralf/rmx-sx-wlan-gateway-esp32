@@ -91,7 +91,8 @@ void commSendEmergencyStop();
 /**
  * @brief Gateway-Version, aus dem WebSocket-Handshake (hello_ack.server_version)
  *        uebernommen. Leer ("") bis zum ersten erfolgreichen hello_ack.
- *        Wird in der Statusleiste (gui.cpp) angezeigt.
+ *        Wird in der Statusleiste (gui.cpp) angezeigt. Ist ein Pointer auf
+ *        einen statischen Puffer in comm.cpp (gwVersionBuf) — nicht freigeben.
  */
 extern const char* gwVersion;
 

@@ -118,5 +118,26 @@ Aufgaben:
 - [x] Z5-T4  platformio.ini: kommentiertes -D DEBUG_OVERLAY=1.
 - [x] Z5-T5  CHANGELOG v0.2.8 + Z4-T8 vermerkt.
 - [x] Z5-T6  pio run SUCCESS, Branch, PR #28, Tag v0.2.8 + push.
-- [ ] Z5-T7  (USER) Hardware-Test v0.2.8: oben links unter v0.2.8 steht "0.1.1"?
-           Antwort: 1. ja/nein (Debug-Overlay jetzt AUS, keine T:N-Leiste).
+- [ ] Z5-T7  (USER) Hardware-Test v0.2.8: GW-Version NICHT sichtbar + T:N/L
+           TROTZDEM da -> zwei echte Bugs (siehe Zyklus 6 / v0.2.9).
+
+==================================================================
+Zyklus 6: Zwei Bugs fix (v0.2.9) — Debug-Flag + Dangling Pointer
+==================================================================
+Befund (USER, v0.2.8): (1) T:N + L noch sichtbar obwohl DEBUG_OVERLAY=0.
+  (2) GW-Version "0.1.1" NICHT sichtbar.
+  Ursache 1: main.cpp #ifdef DEBUG_OVERLAY -> Makro IMMER definiert (Wert 0)
+             -> Code lief trotzdem. Fix: #if DEBUG_OVERLAY (Wertpruefung).
+  Ursache 2: comm.cpp gwVersion = doc["server_version"] -> doc lokal im Event,
+             nach Event weg -> Dangling Pointer (Müll). Fix: char[16] + strncpy.
+Aufgaben:
+- [x] Z6-T1  main.cpp: #ifdef DEBUG_OVERLAY -> #if DEBUG_OVERLAY.
+- [x] Z6-T2  comm.cpp: gwVersion -> gwVersionBuf[16] + strncpy.
+- [x] Z6-T3  comm.h: Dok-Kommentar gwVersion (statischer Puffer).
+- [x] Z6-T4  config.h FW_VERSION v0.2.9 + gui.cpp drawStatusBar Klartext.
+- [x] Z6-T5  CHANGELOG v0.2.9 + Z5-T7 vermerkt.
+- [x] Z6-T6  pio run SUCCESS, Branch, PR #29, Tag v0.2.9 + push.
+- [ ] Z6-T7  (USER) Hardware-Test v0.2.9:
+           1. oben links unter v0.2.9 steht "0.1.1"? (GW-Version)
+           2. T:N + L WEG? (Debug jetzt aus)
+           Antwort: 1. ja/nein  2. ja/nein
