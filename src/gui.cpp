@@ -469,3 +469,20 @@ void guiDrawLoopCounter(uint32_t n)
     guiTft.setTextColor(TFT_WHITE, TFT_BLACK);
     guiTft.drawString("L" + String(n), 182, 2, 1);
 }
+
+/**
+ * @brief Zeichnet ein kleines Kreuz + Kreis an eine Display-Ecke
+ *        (waehrend der Touch-Kalibrierung).
+ * @param x,y      Eck-Position in Pixeln (Rotation 0)
+ * @param color    TFT_YELLOW = noch zu tippen, TFT_GREEN = erledigt
+ * @return void
+ * @note Wird von touch.cpp (Kalib-Modus) per extern-Callback gerufen.
+ *       Ein 20px-Kreuz + 12px-Kreis macht die Zielposition gut sichtbar.
+ */
+void touchDrawCalibCross(int16_t x, int16_t y, uint16_t color)
+{
+    const int16_t len = 10;   // halbe Kreuz-Arm-Laenge
+    guiTft.drawFastHLine(x - len, y, 2 * len, color);
+    guiTft.drawFastVLine(x, y - len, 2 * len, color);
+    guiTft.drawCircle(x, y, 12, color);
+}

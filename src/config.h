@@ -21,7 +21,7 @@
 // ---- Firmware-Version ------------------------------------------------------
 // Wird oben links auf dem Display gedruckt und sollte vor jedem funktionalen
 // Firmware-Test gebumppt werden (Vorgabe im Projekt).
-#define FW_VERSION "v0.2.1"
+#define FW_VERSION "v0.2.2"
 
 // ---- Gateway-Verbindung (ueberschreibbar via platformio.ini build_flags) ---
 #ifndef GW_HOST
@@ -63,11 +63,12 @@
 #define TOUCH_IRQ  36              //!< T_IRQ  (Touch-Interrupt, active LOW)
 
 // ---- Touch-Kalibrierung (Startwerte, werden zur Laufzeit auto-kalibriert) -
-// Grobe Roh-Grenzen fuer das 2.8" CYD Panel (0..4095). Die Auto-Kalibrierung
-// (touch.cpp) verfeinert xMin/xMax/yMin/yMax beim Beruehren der Ecken.
+// Grobe Roh-Grenzen fuer das 2.8" CYD Panel (0..4095). Werden beim Boot
+// aus NVS geladen, falls eine manuelle "calib" durchgefuehrt wurde.
+// Fallback-Startwerte: aus echten Eckmessungen (RX 205..3797 / RY 190..3769).
 #define TS_MIN_X 200
-#define TS_MAX_X 3700
-#define TS_MIN_Y 240
+#define TS_MAX_X 3800
+#define TS_MIN_Y 190
 #define TS_MAX_Y 3900
 #define TS_Z_THRESHOLD 300         //!< Mindest-Druckstaerke fuer "gedrueckt"
 
