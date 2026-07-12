@@ -10,6 +10,13 @@ FW_VERSION, Tag und Log jederzeit nachvollziehbar sind.
 
 ---
 
+## [v0.2.5] - 2026-07-13
+### Behoben (Display, Bugfix)
+- **FW-Version oben links sichtbar:** `gui.cpp` zeichnete `FW_VERSION` in `TFT_DARKGREY` auf `COLOR_BACKGROUND` (= ebenfalls `TFT_DARKGREY`) — identische Farbe, Text unsichtbar. Textfarbe auf `TFT_WHITE` geaendert (Kontrast).
+### Technik / Verifikation
+- `pio run` SUCCESS.
+- Bump v0.2.4 -> v0.2.5 (Code-Change ggü. v0.2.4).
+
 ## [v0.2.4] - 2026-07-12
 ### Hinzugefügt (Button-Implementierung, Issue #8/#9/#12/#14/#16/#18/#20/#22)
 - **Button 1 (Lok-Dropdown):** Adresse vom Raspi adoptieren (`logicSetState`), Lokname dynamisch (`"Lok <addr>"` statt Hartcode).
