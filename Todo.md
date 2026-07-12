@@ -137,7 +137,29 @@ Aufgaben:
 - [x] Z6-T4  config.h FW_VERSION v0.2.9 + gui.cpp drawStatusBar Klartext.
 - [x] Z6-T5  CHANGELOG v0.2.9 + Z5-T7 vermerkt.
 - [x] Z6-T6  pio run SUCCESS, Branch, PR #29, Tag v0.2.9 + push.
-- [ ] Z6-T7  (USER) Hardware-Test v0.2.9:
-           1. oben links unter v0.2.9 steht "0.1.1"? (GW-Version)
-           2. T:N + L WEG? (Debug jetzt aus)
+- [ ] Z6-T7  (USER) Hardware-Test v0.2.9: 1. NEIN (GW-Version weg)
+           2. JA (T:N + L weg -> Debug-Fix bestaetigt).
+           => Root-Cause Punkt 1 noch offen -> Zyklus 7 (v0.2.10).
+
+==================================================================
+Zyklus 7: GW-Version sichtbar + Diagnose-Fallback (v0.2.10)
+==================================================================
+Befund (USER, v0.2.9): T:N/L weg (Fix OK), aber GW-Version "0.1.1" fehlt
+  weiterhin. Gateway sendet hello_ack.server_version="0.1.1" korrekt
+  (protocol.py HelloAck.server_version=SERVER_VERSION=__version__="0.1.1"),
+  Key in comm.cpp stimmt. Position (6,15) auf COLOR_PANEL versehentlich
+  nicht uebermalt (lightButton y=80, locName y=46).
+  Verdacht: hello_ack kommt nicht an / wird nicht geparst -> gwVersion leer.
+  Fix: (1) Sichtbares Fallback "GW: ?" (ROT) wenn gwVersion leer.
+       (2) drawStatusBar() in guiUpdateDynamic() ALS LETZTES (Draw-Order).
+       (3) FW_VERSION v0.2.10.
+Aufgaben:
+- [x] Z7-T1  comm.cpp/gui: Root-Cause-Check (Key, Draw-Order) -> Key OK,
+                    Pos OK, hello_ack-Pfad verifiziert.
+- [x] Z7-T2  gui.cpp: "GW: ?" (ROT) Fallback + drawStatusBar() zuletzt.
+- [x] Z7-T3  config.h FW_VERSION v0.2.10 + CHANGELOG + Todo.
+- [x] Z7-T4  pio run SUCCESS, Branch, PR #30, Tag v0.2.10 + push.
+- [ ] Z7-T5  (USER) Hardware-Test v0.2.10:
+           1. steht "0.1.1" (grau) unter v0.2.10? -> hello_ack OK.
+           2. ODER steht "GW: ?" (ROT)? -> hello_ack KOMMT NICHT AN.
            Antwort: 1. ja/nein  2. ja/nein

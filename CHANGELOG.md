@@ -10,6 +10,25 @@ FW_VERSION, Tag und Log jederzeit nachvollziehbar sind.
 
 ---
 
+## [v0.2.10] - 2026-07-13
+### Behoben (GW-Version Sichtbarkeit + Diagnose-Fallback)
+- **Sichtbares Fallback:** `drawStatusBar()` zeigt bei leerem `gwVersion`
+  (noch KEIN hello_ack empfangen — z.B. Gateway nicht erreichbar) nun
+  **"GW: ?" in ROT** statt gar nichts. So ist am Display erkennbar, ob der
+  WebSocket-Handshake fehlschlaegt, OHNE Serial-Log. Bei erfolgreichem
+  `hello_ack` steht die echte Version (z.B. "0.1.1") in Grau.
+- **Draw-Order gesichert:** `drawStatusBar()` läuft in `guiUpdateDynamic()`
+  jetzt ALS LETZTES (nach `drawLightButton`/`drawFunctionColumns`), damit
+  die GW-Version-Ecke (6,15) nicht uebermalt wird.
+- Position (6,15) auf COLOR_PANEL verifiziert: kein anderes Panel-Element
+  ueberlappt diese Stelle (lightButton y=80, locName y=46, Panel bis y=42).
+- `config.h` FW_VERSION v0.2.9 -> v0.2.10 (Pflicht-Bump).
+### Hinweis (Root-Cause offen)
+- Bei v0.2.9 war GW-Version weiterhin nicht sichtbar, T:N/L aber weg (Fix
+  bestaetigt). Ursache hierfuer noch nicht 100% klar: entweder kommt
+  `hello_ack` nicht an, oder `server_version` wird nicht gesetzt. v0.2.10
+  liefert durch "GW: ?" die Diagnose am Display. pio run SUCCESS.
+
 ## [v0.2.9] - 2026-07-13
 ### Behoben (zwei echte Bugs aus Hardware-Test v0.2.8)
 - **Bug 1 — Debug-Overlay lief trotzdem:** `main.cpp` nutzte `#ifdef DEBUG_OVERLAY`.
