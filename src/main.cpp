@@ -77,7 +77,7 @@ void loop()
         lastTouch = millis();
         if (touchIsPressed())
         {
-            touchSample(&tp);
+            touchSample(&tp);   // touchSample() aktualisiert intern die Auto-Calib-Grenzen
             int16_t px = 0, py = 0;
             touchGetCalibrated(&px, &py);
 
