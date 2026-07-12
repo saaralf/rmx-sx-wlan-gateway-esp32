@@ -25,11 +25,11 @@
 // ---- Firmware-Version ------------------------------------------------------
 // Wird oben links auf dem Display gedruckt und sollte vor jedem funktionalen
 // Firmware-Test gebumppt werden (Vorgabe im Projekt).
-#define FW_VERSION "v0.2.12"
+#define FW_VERSION "v0.2.13"
 
 // ---- Gateway-Verbindung (ueberschreibbar via platformio.ini build_flags) ---
 #ifndef GW_HOST
-#define GW_HOST "192.168.0.87"     //!< IP des rmx-sx-wlan-gateway Daemons (Raspi)
+#define GW_HOST "192.168.50.1"     //!< IP des rmx-sx-wlan-gateway Daemons (Pi AP, wlan0)
 #endif
 #ifndef GW_PORT
 #define GW_PORT 8080               //!< WebSocket-Port des Daemons
