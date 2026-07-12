@@ -178,7 +178,31 @@ Aufgaben:
 - [x] Z8-T2  config.h FW_VERSION v0.2.11.
 - [x] Z8-T3  CHANGELOG v0.2.11 + Z7-T5 Interpretation + Zyklus 8.
 - [x] Z8-T4  pio run SUCCESS, Branch, PR #31, Tag v0.2.11 + push.
-- [ ] Z8-T5  (USER) Hardware-Test v0.2.11:
-           1. steht NUR "0.1.1" (grau) unter v0.2.11? (rot weg)
-           2. KEIN rotes "?" mehr?
+-------------------------------------------------------------------
+USER-Befund v0.2.11 (Zyklus 8): "ich sehe v0.2.11 und GW: ? in rot"
+  => NUR rotes "GW: ?", KEIN graues "0.1.1". Das war KEIN Artefakt,
+     sondern: gwVersion blieb leer -> hello_ack kam NICHT an.
+  HYPOTHESE: falscher Gateway-Host (192.168.50.1 statt 192.168.0.87).
+  => Zyklus 9: Infrastruktur verifiziert, WURZELURSACHE gefunden.
+
+==================================================================
+Zyklus 9: WURZELURSACHE = falscher GW_HOST (v0.2.12)
+==================================================================
+Verifiziert (von Linux-Host aus):
+- Pi erreichbar: 192.168.0.87 ping OK; Port 8080 OFFEN (python pid 992).
+- 192.168.50.1 NICHT erreichbar (100% loss) -> Subnetz existiert nicht.
+- platformio.ini + config.h setzen GW_HOST="192.168.50.1" (FALSCH).
+- Roher WebSocket-Handshake gegen 127.0.0.1:8080 (Pi) liefert:
+    {"type":"hello_ack","server":"rmx-sx-gateway",
+     "server_version":"0.1.0","status":"ready"}
+  -> Daemon funktioniert, liefert 0.1.0 (nicht 0.1.1; unkritisch).
+Fix: GW_HOST -> "192.168.0.87" (platformio.ini massgebend + config.h).
+Aufgaben:
+- [x] Z9-T1  platformio.ini + config.h: GW_HOST 192.168.50.1 -> 192.168.0.87.
+- [x] Z9-T2  config.h FW_VERSION v0.2.12.
+- [x] Z9-T3  CHANGELOG v0.2.12 + Z8-T5 Befund + Zyklus 9.
+- [x] Z9-T4  pio run SUCCESS, Branch, PR #32, Tag v0.2.12 + push.
+- [ ] Z9-T5  (USER) Hardware-Test v0.2.12:
+           1. steht grau "0.1.0" (oder 0.1.1) unter v0.2.12?
+           2. KEIN rotes "GW: ?" mehr?
            Antwort: 1. ja/nein  2. ja/nein
