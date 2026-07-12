@@ -150,6 +150,9 @@ static void webSocketEvent(WStype_t type, uint8_t* payload, size_t length)
                 JsonObject fobj = doc["functions"];
                 if (!fobj.isNull())
                 {
+                    // F0 (Licht) liegt unter Schluessel "0"; F1..F16 unter "1".."16".
+                    // Wichtig: die UI adoptiert ALLES vom Raspi, auch F0.
+                    fns[0] = fobj["0"] | false;
                     for (int i = 0; i < 16; i++)
                         fns[i] = fobj[String(i + 1)] | false;
                 }

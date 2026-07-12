@@ -174,6 +174,8 @@ void logicSetState(uint8_t addr, int speed, const char* dir,
                                                     : Direction::FORWARD;
     for (int i = 0; i < 16; i++)
         logicFunctions[i].active = fnStates[i];
+    // F0 (Licht) aus dem Gateway-State uebernehmen — die UI folgt dem Raspi.
+    logicLightOn = fnStates[0];
 }
 
 void logicSetOnline(bool online)
