@@ -41,6 +41,10 @@ static uint32_t _calX = 0, _calY = 0; // Akkumulator fuer aktuelle Ecke
 static uint16_t _xMinBak = TS_MIN_X, _xMaxBak = TS_MAX_X;
 static uint16_t _yMinBak = TS_MIN_Y, _yMaxBak = TS_MAX_Y;
 
+// Kreuz-Zeichnung im Kalib-Modus: GUI-Callback (in gui.cpp definiert)
+// wird nur aufgerufen, wenn das Display erreichbar ist.
+extern void touchDrawCalibCross(int16_t x, int16_t y, uint16_t color);
+
 // Hilfsfunktion: laden/speichern der kalibrierten Grenzen in NVS
 static void touchLoadCalibration()
 {
@@ -125,11 +129,11 @@ static void touchUpdate()
     _yraw = rx;
     _haveSample = true;
 
-    // Auto-Kalibrierung: Grenzen lazily erweitern
-    if (_xraw < _xMin) _xMin = _xraw;
-    if (_xraw > _xMax) _xMax = _xraw;
-    if (_yraw < _yMin) _yMin = _yraw;
-    if (_yraw > _yMax) _yMax = _yraw;
+    // HINWEIS: KEINE Auto-Kalibrierung hier! Die Limits werden ausschliesslich
+    // durch die manuelle Ecken-Kalibrierung ("calib" + 4 Ecken tippen) bzw.
+    // durch die gespeicherten NVS-Werte gesetzt. Eine laufende Auto-Erweiterung
+    // wuerde bei schwebendem Panel (kein echtes Panel am Desktop) Müll in die
+    // Grenzen ziehen und die Y-Achse systematisch verfaelschen.
 }
 
 // ============================================================================
@@ -138,9 +142,7 @@ static void touchUpdate()
 
 void touchBegin()
 {
-    // Ggf. gespeicherte Ecken-Kalibrierung aus NVS laden
-    touchLoadCalibration();
-
+    // Pin-Init zuerst (auch wenn NVS-Load fehlschlaegt)
     pinMode(TOUCH_CLK,  OUTPUT);
     digitalWrite(TOUCH_CLK, LOW);
     pinMode(TOUCH_MOSI, OUTPUT);
@@ -150,8 +152,45 @@ void touchBegin()
     pinMode(TOUCH_IRQ,  INPUT);
     _msraw = 0;
     _haveSample = false;
-    _xMin = TS_MIN_X; _xMax = TS_MAX_X;
-    _yMin = TS_MIN_Y; _yMax = TS_MAX_Y;
+
+    // Ggf. gespeicherte Ecken-Kalibrierung aus NVS laden.
+    // WICHTIG: Nicht danach mit config.h-Defaults ueberschreiben!
+    // Vorherigen Stand sichern, damit wir erkennen, ob NVS etwas geliefert hat.
+    uint16_t nvXmin = TS_MIN_X, nvXmax = TS_MAX_X;
+    uint16_t nvYmin = TS_MIN_Y, nvYmax = TS_MAX_Y;
+    {
+        Preferences p;
+        if (p.begin("touchcal", true))   // read-only
+        {
+            nvXmin = p.getUShort("xmin", TS_MIN_X);
+            nvXmax = p.getUShort("xmax", TS_MAX_X);
+            nvYmin = p.getUShort("ymin", TS_MIN_Y);
+            nvYmax = p.getUShort("ymax", TS_MAX_Y);
+            p.end();
+        }
+    }
+    // Nur uebernehmen, wenn ein gueltiger ( nicht-leerer ) NVS-Satz vorliegt.
+    // Gueltigkeits-Check: xMin<xMax und yMin<yMax UND innerhalb 0..4095.
+    bool nvValid = (nvXmin < nvXmax) && (nvYmin < nvYmax) &&
+                   (nvXmin <= 4095) && (nvXmax <= 4095) &&
+                   (nvYmin <= 4095) && (nvYmax <= 4095) &&
+                   (nvXmin > 0 || nvXmax < 4095) &&   // nicht die unberuehrte Default-Range
+                   (nvYmin > 0 || nvYmax < 4095);
+    if (nvValid)
+    {
+        _xMin = nvXmin; _xMax = nvXmax;
+        _yMin = nvYmin; _yMax = nvYmax;
+        Serial.printf("[CALIB] NVS geladen: X%d..%d  Y%d..%d\n",
+                       _xMin, _xMax, _yMin, _yMax);
+    }
+    else
+    {
+        // Kein gueltiger NVS-Satz -> Defaults aus config.h verwenden
+        _xMin = TS_MIN_X; _xMax = TS_MAX_X;
+        _yMin = TS_MIN_Y; _yMax = TS_MAX_Y;
+        Serial.printf("[CALIB] NVS leer/invalid -> Defaults: X%d..%d  Y%d..%d\n",
+                       _xMin, _xMax, _yMin, _yMax);
+    }
 }
 
 void touchSample(TSPoint* out)
@@ -206,6 +245,20 @@ bool touchGetTap(int16_t* px, int16_t* py)
     // --- Kalibrier-Modus: Ecke nach Ecke erfassen ---
     if (_calibrating)
     {
+        // 4 Ziel-Ecken auf dem Display (Pixel, Rotation 0):
+        //  0: oben links, 1: oben rechts, 2: unten rechts, 3: unten links
+        static const int16_t ex[4] = { 20, 220, 220, 20 };
+        static const int16_t ey[4] = { 20, 20, 300, 300 };
+
+        // Aktive Ecke gelb zeichnen, bereits erledigte gruen
+        // (RGB565: Gelb=0xFFE0, Gruen=0x07E0 — keine TFT_eSPI-Deps in touch.cpp)
+        for (int i = 0; i < 4; i++)
+        {
+            uint16_t c = (i < _calibSamples) ? 0x07E0 : 0xFFE0;
+            if (i == _calibSamples) c = 0xFFE0;   // aktive Ecke hervorheben
+            touchDrawCalibCross(ex[i], ey[i], c);
+        }
+
         if (millis() > _calibDeadline)
         {
             // Fenster abgelaufen -> ggf. speichern + beenden
@@ -229,11 +282,14 @@ bool touchGetTap(int16_t* px, int16_t* py)
         {
             uint16_t rx = (uint16_t)(_tapSumX / _tapCount);
             uint16_t ry = (uint16_t)(_tapSumY / _tapCount);
-            // Grenzen exakt auf die echte Panel-Range setzen
-            if (_calibSamples == 0 || rx < _xMin) _xMin = rx;
-            if (_calibSamples == 0 || rx > _xMax) _xMax = rx;
-            if (_calibSamples == 0 || ry < _yMin) _yMin = ry;
-            if (_calibSamples == 0 || ry > _yMax) _yMax = ry;
+            // Grenzen EXAKT auf die echte Panel-Range setzen (nicht nur
+            // verkleinern): jede Ecke definiert ihre Achse eindeutig.
+            // Ecke 0: MinX+MinY | Ecke 1: MaxX+MinY
+            // Ecke 2: MaxX+MaxY  | Ecke 3: MinX+MaxY
+            if (_calibSamples == 0) { _xMin = rx; _yMin = ry; }
+            if (_calibSamples == 1) { _xMax = rx; _yMin = ry; }
+            if (_calibSamples == 2) { _xMax = rx; _yMax = ry; }
+            if (_calibSamples == 3) { _xMin = rx; _yMax = ry; }
             _calibSamples++;
             Serial.printf("[CALIB] Ecke %d: RX=%u RY=%u (MinX=%u MaxX=%u MinY=%u MaxY=%u)\n",
                            _calibSamples, rx, ry, _xMin, _xMax, _yMin, _yMax);
@@ -289,12 +345,13 @@ void touchStartCalibration()
     _yMinBak = _yMin; _yMaxBak = _yMax;
 
     _calibrating  = true;
-    _calibDeadline = millis() + 12000;   // 12 s Fenster
+    _calibDeadline = millis() + 30000;   // 30 s Fenster (mehr Zeit zum Zielen)
     _calibSamples  = 0;
     _tapSumX = _tapSumY = 0;
     _tapCount = 0;
     _wasPressed = false;
     // Start-Range zuruecksetzen, damit Ecke 1 die Baseline setzt
     _xMin = 4095; _xMax = 0; _yMin = 4095; _yMax = 0;
-    Serial.println("[CALIB] Starte: alle 4 Ecken nacheinander antippen (12 s)");
+    Serial.println("[CALIB] Starte: 4 Ecken nacheinander antippen (30 s)");
+    Serial.println("[CALIB] Kreuze: gelb = noch, gruen = erledigt. Oben links -> rechts -> unten rechts -> unten links");
 }

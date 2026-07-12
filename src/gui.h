@@ -113,9 +113,19 @@ void guiDrawDebugTouch(bool touched, int16_t rx, int16_t ry,
 
 /**
  * @brief Zeigt den Loop-Zaehler oben rechts an (Laufzeit-Diagnose).
- * @param n  Anzahl der seit Start durchlaufenen loop()-Iterationen.
+ * @param n  Anzahl der seit Start durchlaufenen loop()-Iterationen / 10.
  * @return void
  */
 void guiDrawLoopCounter(uint32_t n);
+
+/**
+ * @brief Zeichnet ein kleines Kreuz + Kreis an eine Display-Ecke
+ *        (waehrend der Touch-Kalibrierung).
+ * @param x,y    Eck-Position in Pixeln (Rotation 0)
+ * @param color  TFT_YELLOW = noch zu tippen, TFT_GREEN = erledigt
+ * @return void
+ * @note Wird von touch.cpp (Kalib-Modus) per extern-Callback gerufen.
+ */
+void touchDrawCalibCross(int16_t x, int16_t y, uint16_t color);
 
 #endif // GUI_H

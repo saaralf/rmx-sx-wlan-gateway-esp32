@@ -8,10 +8,14 @@
 //
 // Ablauf im Programm:
 //   - touchBegin() wird EINMAL in setup() aufgerufen (Pin-Init).
-//   - loop() ruft regelmaessig touchSample() auf; das fuellt ggf. die
-//     Auto-Kalibrierungsgrenzen und liefert den aktuellen Punkt zurueck.
+//   - loop() ruft regelmaessig touchSample() auf; das liefert den
+//     aktuellen Punkt zurueck (gemappt ueber die in NVS gespeicherten
+//     oder per "calib" ermittelten Eck-Grenzen).
 //   - touchIsPressed() liefert true, solange genug Druck anliegt.
 //   - touchGetCalibrated() mappt Rohwerte auf Display-Pixel (0..239, 0..319).
+//   - KEINE laufende Auto-Kalibrierung mehr (wuerde bei schwebendem
+//     Panel Muell in die Grenzen ziehen und Y systematisch verschieben).
+//     Alleinige Quelle der Limits: manuelle "calib" + NVS, sonst Defaults.
 // ============================================================================
 
 #ifndef TOUCH_H
