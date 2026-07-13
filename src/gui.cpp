@@ -46,8 +46,8 @@ constexpr uint16_t COLOR_INACTIVE   = 0x8410;
  *       Funktionen, untere Steuerbuttons) genutzt. Liegt in guiBegin-
  *       Vollbild und guiUpdateDynamic-Kontext.
  */
-static void drawBeveledButton(int16_t x, int16_t y, int16_t w, int16_t h,
-                              uint16_t fillColor, bool active = false)
+void drawBeveledButton(int16_t x, int16_t y, int16_t w, int16_t h,
+                        uint16_t fillColor, bool active)
 {
     const uint16_t borderColor = active ? TFT_YELLOW : TFT_WHITE;
     guiTft.fillRoundRect(x, y, w, h, 3, fillColor);
@@ -69,9 +69,9 @@ static void drawBeveledButton(int16_t x, int16_t y, int16_t w, int16_t h,
  * @return void
  * @note Utility fuer alle beschrifteten Elemente; nutzt guiTft.
  */
-static void drawCenteredText(const String& text, int16_t centerX, int16_t centerY,
-                             uint16_t color, uint8_t font = 2,
-                             uint16_t background = TFT_TRANSPARENT)
+void drawCenteredText(const String& text, int16_t centerX, int16_t centerY,
+                      uint16_t color, uint8_t font,
+                      uint16_t background)
 {
     guiTft.setTextDatum(MC_DATUM);
     if (background == TFT_TRANSPARENT) guiTft.setTextColor(color);
@@ -90,9 +90,9 @@ static void drawCenteredText(const String& text, int16_t centerX, int16_t center
  * @return void
  * @note Utility fuer Beschriftungen am linken Rand (Lokname, Licht).
  */
-static void drawLeftText(const String& text, int16_t x, int16_t centerY,
-                         uint16_t color, uint8_t font = 2,
-                         uint16_t background = TFT_TRANSPARENT)
+void drawLeftText(const String& text, int16_t x, int16_t centerY,
+                  uint16_t color, uint8_t font,
+                  uint16_t background)
 {
     guiTft.setTextDatum(ML_DATUM);
     if (background == TFT_TRANSPARENT) guiTft.setTextColor(color);
@@ -109,8 +109,8 @@ static void drawLeftText(const String& text, int16_t x, int16_t centerY,
  * @return void
  * @note Wird fuer Vor/Rueck-Buttons verwendet.
  */
-static void drawArrowTriangle(int16_t centerX, int16_t centerY,
-                              int16_t size, bool right, uint16_t color)
+void drawArrowTriangle(int16_t centerX, int16_t centerY,
+                        int16_t size, bool right, uint16_t color)
 {
     if (right)
         guiTft.fillTriangle(centerX - size, centerY - size,
@@ -127,9 +127,9 @@ static void drawArrowTriangle(int16_t centerX, int16_t centerY,
  * @param x,y   Mittelpunkt der Birne in Pixeln
  * @param active true = eingeschaltet (gelb), false = aus (grau)
  * @return void
- * @note Wird von drawLightButton() genutzt.
+ * @note Wird von drawLightButton() und der waagerechten Demo genutzt.
  */
-static void drawLightIcon(int16_t x, int16_t y, bool active)
+void drawLightBulb(int16_t x, int16_t y, bool active)
 {
     const uint16_t color = active ? TFT_YELLOW : COLOR_INACTIVE;
     guiTft.fillCircle(x, y, 5, color);
@@ -189,15 +189,20 @@ static void drawLocomotive()
     const Rect& r = Layout::locomotive;
     guiTft.fillRoundRect(r.x, r.y, r.w, r.h, 4, COLOR_PANEL);
     guiTft.drawRoundRect(r.x, r.y, r.w, r.h, 4, TFT_WHITE);
-    const int16_t x = r.x + 80, y = r.y + 10;
-    guiTft.fillRect(x, y, 72, 13, TFT_YELLOW);
+    // Lok-Silhouette relativ zur Panel-Mitte (keine harten Pixel mehr).
+    const int16_t cx = r.x + r.w / 2;
+    const int16_t cy = r.y + r.h / 2;
+    const int16_t w = 72, h = 13;
+    const int16_t x = cx - w / 2;
+    const int16_t y = cy - h / 2 - 2;
+    guiTft.fillRect(x, y, w, h, TFT_YELLOW);
     guiTft.fillRect(x + 4,  y + 3, 13, 6, TFT_BLUE);
     guiTft.fillRect(x + 21, y + 3, 13, 6, TFT_BLUE);
     guiTft.fillRect(x + 38, y + 3, 13, 6, TFT_BLUE);
     guiTft.fillRect(x + 55, y + 3, 13, 6, TFT_BLUE);
-    guiTft.fillRect(x, y + 13, 72, 5, TFT_BLUE);
-    guiTft.fillCircle(x + 13, y + 19, 4, TFT_BLACK);
-    guiTft.fillCircle(x + 59, y + 19, 4, TFT_BLACK);
+    guiTft.fillRect(x, y + h, w, 5, TFT_BLUE);
+    guiTft.fillCircle(x + 13, y + h + 7, 4, TFT_BLACK);
+    guiTft.fillCircle(x + 59, y + h + 7, 4, TFT_BLACK);
     guiTft.drawLine(x + 28, y, x + 36, y - 7, TFT_RED);
     guiTft.drawLine(x + 36, y - 7, x + 44, y, TFT_RED);
     guiTft.drawFastHLine(x + 30, y - 8, 18, TFT_RED);
@@ -213,14 +218,9 @@ static void drawLocomotive()
 static void drawLocName()
 {
     const Rect& nameRect = Layout::locomotiveName;
-    const Rect& dropRect = Layout::locomotiveDropDown;
     drawBeveledButton(nameRect.x, nameRect.y, nameRect.w, nameRect.h, TFT_WHITE);
     drawLeftText("Lok " + String(logicAddress), nameRect.x + 7, nameRect.y + nameRect.h / 2,
-                 TFT_BLACK, 4, TFT_WHITE);
-    drawBeveledButton(dropRect.x, dropRect.y, dropRect.w, dropRect.h, COLOR_BUTTON);
-    guiTft.fillTriangle(dropRect.x + 7,  dropRect.y + 11,
-                        dropRect.x + 20, dropRect.y + 11,
-                        dropRect.x + 13, dropRect.y + 20, TFT_BLACK);
+                 TFT_BLACK, 2, TFT_WHITE);
 }
 
 /**
@@ -234,8 +234,8 @@ static void drawLightButton()
     const Rect& r = Layout::lightButton;
     const uint16_t buttonColor = logicLightOn ? TFT_YELLOW : COLOR_BUTTON;
     drawBeveledButton(r.x, r.y, r.w, r.h, buttonColor, logicLightOn);
-    drawLightIcon(r.x + 17, r.y + r.h / 2, logicLightOn);
-    drawLeftText("Licht", r.x + 31, r.y + r.h / 2, TFT_BLACK, 2, buttonColor);
+    drawLightBulb(r.x + 17, r.y + r.h / 2, logicLightOn);
+    drawLeftText("Licht", r.x + 31, r.y + r.h / 2, TFT_BLACK, 1, buttonColor);
 }
 
 /**
@@ -249,7 +249,7 @@ static void drawAddressSelector()
     const Rect& r = Layout::addressSelector;
     drawBeveledButton(r.x, r.y, r.w, r.h, TFT_WHITE);
     drawCenteredText(String(logicAddress), r.x + 24, r.y + r.h / 2,
-                     TFT_BLACK, 2, TFT_WHITE);
+                     TFT_BLACK, 1, TFT_WHITE);
     const int16_t sepX = r.x + r.w - 18;
     guiTft.drawFastVLine(sepX, r.y + 2, r.h - 4, TFT_DARKGREY);
     guiTft.fillTriangle(sepX + 9, r.y + 5,  sepX + 4, r.y + 12, sepX + 14, r.y + 12, TFT_BLACK);
@@ -270,7 +270,7 @@ static void drawDigitalDisplay()
     guiTft.drawRoundRect(r.x, r.y, r.w, r.h, 4, TFT_BLACK);
     char buf[4];
     snprintf(buf, sizeof(buf), "%03d", logicSpeed);
-    drawCenteredText(buf, r.x + r.w / 2, r.y + r.h / 2, COLOR_BLUE_LED, 4, TFT_NAVY);
+    drawCenteredText(buf, r.x + r.w / 2, r.y + r.h / 2, COLOR_BLUE_LED, 2, TFT_NAVY);
 }
 
 /**
@@ -287,7 +287,7 @@ static void drawFunctionButton(int16_t x, int16_t y, int16_t w, int16_t h,
     const uint16_t bc = f.active ? TFT_YELLOW : COLOR_BUTTON;
     drawBeveledButton(x, y, w, h, bc, f.active);
     drawCenteredText("F" + String(f.functionNumber), x + w / 2, y + h / 2,
-                     TFT_BLACK, 4, bc);
+                     TFT_BLACK, 2, bc);
 }
 
 /**
@@ -314,10 +314,12 @@ static void drawFunctionColumns()
 }
 
 /**
- * @brief Zeichnet Throttle-Slider + Speed-Gauge (Balkenanzeige).
+ * @brief Zeichnet Throttle-Slider + Speed-Gauge (senkrechte Balkenanlage).
  * @param keine (liest logicTargetSpeed + logicSpeed aus logic.h)
  * @return void
  * @note Vollbild + guiUpdateDynamic (Beide Werte aendern sich bei Fahrt).
+ *       Im waagerechten Layout (320x240) stehen beide Balken zentral zwischen
+ *       den F-Tasten-Spalten (senkrecht).
  */
 static void drawThrottle()
 {
@@ -356,6 +358,7 @@ static void drawThrottle()
  * @param keine
  * @return void
  * @note Vollbild. Buttons sind statisch (Hit-Test in logic.cpp).
+ *       Waagerecht nebeneinander (Rotation 1).
  */
 static void drawBottomControls()
 {
@@ -365,24 +368,18 @@ static void drawBottomControls()
     const Rect& stop = Layout::emergencyButton;
 
     drawBeveledButton(gas.x, gas.y, gas.w, gas.h, COLOR_BUTTON);
-    guiTft.fillTriangle(gas.x + gas.w / 2, gas.y + 6,
-                        gas.x + 15, gas.y + 27,
-                        gas.x + gas.w - 15, gas.y + 27, TFT_GREEN);
-    drawCenteredText("Gas", gas.x + gas.w / 2, gas.y + gas.h - 8, TFT_BLACK, 1, COLOR_BUTTON);
+    drawCenteredText("Gas", gas.x + gas.w / 2, gas.y + gas.h / 2, TFT_BLACK, 1, COLOR_BUTTON);
 
     drawBeveledButton(back.x, back.y, back.w, back.h, COLOR_BUTTON);
-    drawArrowTriangle(back.x + back.w / 2, back.y + 20, 10, false, TFT_WHITE);
-    drawCenteredText("Rueck", back.x + back.w / 2, back.y + back.h - 8, TFT_BLACK, 1, COLOR_BUTTON);
+    drawArrowTriangle(back.x + back.w / 2, back.y + back.h / 2, 10, false, TFT_WHITE);
+    drawCenteredText("Rueck", back.x + back.w / 2, back.y + 6, TFT_BLACK, 1, COLOR_BUTTON);
 
     drawBeveledButton(front.x, front.y, front.w, front.h, COLOR_BUTTON);
-    drawArrowTriangle(front.x + front.w / 2, front.y + 20, 10, true, TFT_YELLOW);
-    drawCenteredText("Vor", front.x + front.w / 2, front.y + front.h - 8, TFT_BLACK, 1, COLOR_BUTTON);
+    drawArrowTriangle(front.x + front.w / 2, front.y + back.h / 2, 10, true, TFT_YELLOW);
+    drawCenteredText("Vor", front.x + front.w / 2, front.y + 6, TFT_BLACK, 1, COLOR_BUTTON);
 
-    drawBeveledButton(stop.x, stop.y, stop.w, stop.h, COLOR_BUTTON);
-    guiTft.fillTriangle(stop.x + stop.w / 2, stop.y + 29,
-                        stop.x + 15, stop.y + 7,
-                        stop.x + stop.w - 15, stop.y + 7, TFT_RED);
-    drawCenteredText("STOP", stop.x + stop.w / 2, stop.y + stop.h - 8, TFT_BLACK, 1, COLOR_BUTTON);
+    drawBeveledButton(stop.x, stop.y, stop.w, stop.h, TFT_RED);
+    drawCenteredText("STOP", stop.x + stop.w / 2, stop.y + stop.h / 2, TFT_WHITE, 1, TFT_RED);
 }
 
 // ============================================================================
@@ -406,7 +403,7 @@ void guiInitDisplay()
         digitalWrite(TFT_BL, HIGH); delay(150);
     }
     guiTft.init();          // <-- hier haengt es ggf. (weisser Schirm)
-    guiTft.setRotation(0);
+    guiTft.setRotation(1);   // waagerechtes Layout (320x240)
     guiBootPhase(TFT_RED, "BOOT");
 }
 
@@ -416,6 +413,19 @@ void guiBootPhase(uint16_t color, const char* msg)
     guiTft.setTextDatum(MC_DATUM);
     guiTft.setTextColor(TFT_WHITE, color);
     guiTft.drawString(msg, 120, 160, 4);
+}
+
+/**
+ * @brief Setzt die Display-Rotation (0=hoch, 1=waagerecht, 2, 3).
+ * @param r  Rotationswert (0..3)
+ * @return void
+ * @note Kapselt guiTft.setRotation(), damit main.cpp nicht den unvollstaendigen
+ *       TFT_eSPI-Typ kennen muss. Nach dem Setzen sollte ein Vollbild
+ *       (guiDrawScreen / guiDrawHorizontalDemo) neu gezeichnet werden.
+ */
+void guiSetRotation(uint8_t r)
+{
+    guiTft.setRotation(r);
 }
 
 void guiBegin()

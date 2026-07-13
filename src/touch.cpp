@@ -116,7 +116,8 @@ static void touchSolveAffine(const uint16_t rx[4], const uint16_t ry[4],
 // Roh -> Display-Pixel ueber die affine Matrix
 static void touchApplyMatrix(uint16_t rx, uint16_t ry, int16_t* px, int16_t* py)
 {
-    const int16_t W = 240, H = 320;
+    // Display-Masse folgen der aktuellen TFT-Rotation (Rotation 1 = 320x240).
+    const int16_t W = 320, H = 240;
     int16_t x = (int16_t)(_m[0]*rx + _m[1]*ry + _m[2]);
     int16_t y = (int16_t)(_m[3]*rx + _m[4]*ry + _m[5]);
     *px = constrain(x, 0, W-1);
@@ -315,12 +316,12 @@ bool touchGetTap(int16_t* px, int16_t* py)
     // --- Kalibrier-Modus: Ecke nach Ecke erfassen ---
     if (_calibrating)
     {
-        // 4 Ziel-Punkte auf dem Display (Pixel, Panel 240x320).
+        // 4 Ziel-Punkte auf dem Display (Pixel, Panel 320x240 waagerecht).
         // NICHT ganz in die Ecken — dort misst der resistiv Panel oft
         // unzuverlaessig (Kreuzungspunkt der beiden Achsen). 15 % Inset:
         //   0: oben links, 1: oben rechts, 2: unten rechts, 3: unten links
-        const int16_t ex[4] = { 36, 204, 204, 36 };
-        const int16_t ey[4] = { 48, 48, 272, 272 };
+        const int16_t ex[4] = { 48, 272, 272, 48 };
+        const int16_t ey[4] = { 36, 36, 204, 204 };
 
         // Aktive Ecke gelb zeichnen, bereits erledigte gruen
         // (RGB565: Gelb=0xFFE0, Gruen=0x07E0 — keine TFT_eSPI-Deps in touch.cpp)
