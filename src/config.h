@@ -33,7 +33,11 @@
 // ---- Firmware-Version ------------------------------------------------------
 // Wird oben links auf dem Display gedruckt und sollte vor jedem funktionalen
 // Firmware-Test gebumppt werden (Vorgabe im Projekt).
+<<<<<<< HEAD
 #define FW_VERSION "v0.2.21"
+=======
+#define FW_VERSION "v0.2.24"
+>>>>>>> 621b8f0 (fix: move encoder SW from IO35 to IO4 (v0.2.24))
 
 // ---- Gateway-Verbindung (ueberschreibbar via platformio.ini build_flags) ---
 #ifndef GW_HOST
@@ -81,7 +85,7 @@
 // Pull-up haben, sonst muss ein 10k nach 3.3V ergänzt werden.
 #define ENC_CLK             22                 //!< CLK an CN1/P3
 #define ENC_DT              27                 //!< DT  an CN1
-#define ENC_SW              35                 //!< SW  an P3 (Input Only)
+#define ENC_SW               4                 //!< SW  an stable GPIO instead of IO35
 #define ENC_DEBOUNCE_MS     5                  //!< Taster-Entprellung
 #define ENC_SW_LONG_MS      500                //!< Grenze kurz vs. lang
 #define ENC_STEPS_PER_CLICK 1                  //!< Encoder-Auflösung pro Raste
