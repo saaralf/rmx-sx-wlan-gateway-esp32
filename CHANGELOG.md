@@ -10,6 +10,21 @@ FW_VERSION, Tag und Log jederzeit nachvollziehbar sind.
 
 ---
 
+## [v0.2.18] - 2026-07-13
+### Behoben (schwarzer Schirm — guiInitDisplay() wurde nie aufgerufen)
+- **Befund (USER, nach v0.2.17):** Display schwarz (Backlight aus, keine UI).
+- **Ursache:** Branch-Split in `gui.cpp` entkoppelte `guiBegin()` vom TFT-Init.
+  `guiBegin()` machte nur noch `guiDrawScreen()` (kein Init, kein Backlight an).
+  Das eigentliche Init (`pinMode(TFT_BL,OUTPUT)`, 2x-Blink, `guiTft.init()`,
+  roter BOOT-Screen) steckte in `guiInitDisplay()` — und wurde **nirgends**
+  aufgerufen. `main.cpp` rief nur `guiBegin()` → Backlight blieb aus → schwarz.
+- **Fix:** `main.cpp setup()` ruft `guiInitDisplay()` GANZ AM ANFANG (vor
+  touchBegin/logicBegin), danach `guiBegin()` (gemäß `gui.h`-Vertrag).
+  Veraltete Ablauf-Doku in `main.cpp` korrigiert.
+- **Verifiziert:** Build SUCCESS, geflasht; User bestätigt echte UI
+  (v0.2.18 oben links) + 2x Backlight-Blink + roter BOOT-Screen vor UI.
+- **FW_VERSION:** v0.2.17 → v0.2.18 (Pflicht-Bump).
+
 ## [v0.2.17] - 2026-07-13
 ### Behoben (WURZELURSACHE: weisser Schirm — build_flags-Override in platformio.local.ini)
 - **Befund (USER):** Display bleibt weiss (nur Backlight an), UI fehlt.

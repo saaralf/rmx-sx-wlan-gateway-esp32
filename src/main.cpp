@@ -9,7 +9,7 @@
 //   4. GUI    (gui.cpp)     - TFT-Anzeige
 //
 // Ablauf:
-//   setup():  touchBegin -> logicBegin -> guiBegin -> commBegin(callbacks)
+//   setup():  guiInitDisplay -> touchBegin -> logicBegin -> guiBegin -> commBegin(callbacks)
 //   loop():   commLoop() + Touch-Sample -> Logic -> ggf. Comm-Senden + GUI
 //
 // Wichtige Korrektur gegenueber v0.1.12: Der Screen wird NICHT mehr
@@ -54,9 +54,10 @@ void setup()
 {
     Serial.begin(115200);
 
+    guiInitDisplay(); // TFT-Init + Backlight an (+ 2x Blink) MUSS vor touchBegin/logicBegin stehen (gui.h)
     touchBegin();   // Touch-Pins (Bit-Bang) initialisieren
     logicBegin();   // Demo-Startzustaende
-    guiBegin();     // Display init + Vollbild (liest logicOnline etc.)
+    guiBegin();     // Vollbild UI (TFT ist bereits via guiInitDisplay() initialisiert)
     commBegin({ onGatewayState, onGatewayOnline, onGatewayRedraw });
 
     Serial.printf("ESP32 Lok-Fahrregler %s (refactored) gestartet\n", FW_VERSION);
