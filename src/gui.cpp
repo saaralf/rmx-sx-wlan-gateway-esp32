@@ -396,13 +396,32 @@ static void drawBottomControls()
  * @note Muss in setup() NACH touchBegin() + logicBegin(), VOR commBegin()
  *       stehen, da das Vollbild logicOnline anzeigt (noch false).
  */
-void guiBegin()
+void guiInitDisplay()
 {
     pinMode(TFT_BL, OUTPUT);
-    digitalWrite(TFT_BL, HIGH);
-    guiTft.init();
+    // 2x blinken = "setup erreicht, VOR TFT-init" (Signal fuer weissen Schirm)
+    for (int i = 0; i < 2; i++)
+    {
+        digitalWrite(TFT_BL, LOW);  delay(150);
+        digitalWrite(TFT_BL, HIGH); delay(150);
+    }
+    guiTft.init();          // <-- hier haengt es ggf. (weisser Schirm)
     guiTft.setRotation(0);
-    guiTft.fillScreen(COLOR_BACKGROUND);
+    guiBootPhase(TFT_RED, "BOOT");
+}
+
+void guiBootPhase(uint16_t color, const char* msg)
+{
+    guiTft.fillScreen(color);
+    guiTft.setTextDatum(MC_DATUM);
+    guiTft.setTextColor(TFT_WHITE, color);
+    guiTft.drawString(msg, 120, 160, 4);
+}
+
+void guiBegin()
+{
+    // TFT ist bereits via guiInitDisplay() initialisiert; hier nur das
+    // echte UI zeichnen (Backlight/Init sind bereits passiert).
     guiDrawScreen();
 }
 

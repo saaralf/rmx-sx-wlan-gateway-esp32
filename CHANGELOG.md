@@ -10,6 +10,30 @@ FW_VERSION, Tag und Log jederzeit nachvollziehbar sind.
 
 ---
 
+## [v0.2.17] - 2026-07-13
+### Behoben (WURZELURSACHE: weisser Schirm — build_flags-Override in platformio.local.ini)
+- **Befund (USER):** Display bleibt weiss (nur Backlight an), UI fehlt.
+- **Ursache:** `platformio.local.ini` enthielt eine eigene `build_flags =`-Zeile
+  (fuer WIFI_PASSWORD). PlatformIO haengt `extra_configs` NICHT an `build_flags`
+  an, sondern **ersetzt** sie. Dadurch fielen ALLE TFT_eSPI-Pin-Defines
+  (TFT_MISO, ILI9341_DRIVER, …) aus dem Build → TFT_eSPI lief auf internen
+  Default-SPI-Pins → falsche Pins → Panel bekam keine gueltigen Pixel →
+  **weisser Schirm**. Core-unabhaengig (Core 2 wie Core 3 betroffen).
+- **Fix:**
+  - `platformio.local.ini`: statt `build_flags =` jetzt eigene Sektion
+    `[wlanpass]` mit `password = …`. Ueberschreibt die Haupt-`build_flags`
+    (TFT-Pins!) nicht mehr.
+  - `platformio.ini`: Passwort wird am Ende der bestehenden `build_flags` als
+    `-D WIFI_PASSWORD="${wlanpass.password}"` sicher interpoliert →
+    TFT-Pins **und** WLAN-Passwort gelangen beide in den Build
+    (verifiziert per `pio run -v`).
+  - `src/config.h`: FW_VERSION v0.2.16 → v0.2.17 (Pflicht-Bump).
+- **Verifiziert:** verbose-Build zeigt alle `-D TFT_*` + `WIFI_PASSWORD`;
+  Farbtest (Rot→Gruen→Blau) am Panel sichtbar; echte UI (v0.2.17) bootet,
+  kein weisser Schirm mehr.
+- **HINWEIS:** Niemals in `platformio.local.ini` erneut `build_flags =`
+  schreiben — das tilgt die TFT-Pins. Immer eigene Sektion oder Anhängen.
+
 ## [v0.2.12] - 2026-07-13
 ### Behoben (WURZELURSACHE: falscher Gateway-Host)
 - **Befund (USER, v0.2.11):** Display zeigt nur rotes "GW: ?", KEIN graues

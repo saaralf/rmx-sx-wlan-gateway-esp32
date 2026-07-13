@@ -6,3 +6,8 @@
 
 src/wifi_secret.h
 platformio.local.ini
+
+# Build-/Tooling-Artefakte (nie committen)
+.venv/
+esp32/
+protection_v024.json
