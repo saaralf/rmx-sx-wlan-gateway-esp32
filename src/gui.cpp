@@ -176,6 +176,13 @@ static void drawStatusBar()
         guiTft.setTextColor(TFT_RED, COLOR_PANEL);
         guiTft.drawString("GW: ?", 6, 15, 1);
     }
+
+    // Encoder-Modusanzeige direkt neben der Gateway-Version.
+    // Konvention: 0 = SPEED, 1 = ADDRESS.
+    const char* modeText = (encoderMode == EncoderMode::SPEED) ? "S" : "A";
+    guiTft.fillRect(54, 15, 10, 9, COLOR_PANEL);
+    guiTft.setTextColor(TFT_YELLOW, COLOR_PANEL);
+    guiTft.drawString(modeText, 54, 15, 1);
 }
 
 /**

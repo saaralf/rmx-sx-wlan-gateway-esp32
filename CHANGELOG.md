@@ -10,6 +10,17 @@ FW_VERSION, Tag und Log jederzeit nachvollziehbar sind.
 
 ---
 
+## [v0.2.21] - 2026-07-13
+### Behoben (Encoder-Prellen, Ruecksprünge, Modus nicht sichtbar)
+- **`src/encoder.cpp`:** Rate-Limiter `ENC_MIN_EVENT_MS=35` + saubere
+  4-Phasen-Quadratur-Auswertung. Ungültige Phasenwechsel werden verworfen,
+  aber als neuer Ausgangspunkt genommen, damit der Encoder nicht hängt.
+- **`src/gui.cpp`:** Modus-Anzeige direkt neben der Gateway-Version:
+  "S" = Speed-Modus, "A" = Adress-Modus. Keine Debug-Overlay-Abhängigkeit mehr.
+- **`src/gui.h`:** Doppelte deklaration für `guiDrawEncoderMode()` entfernt.
+- **`src/config.h`:** `ENC_MIN_EVENT_MS` ergänzt.
+- **FW_VERSION:** v0.2.20 -> v0.2.21.
+
 ## [v0.2.20] - 2026-07-13
 ### Hinzugefuegt (Rotary Encoder CLK/DT/SW auf CN1/P3)
 - **Hardware:** EC11/KY-040 angeschlossen an IO22/IO27/IO35
