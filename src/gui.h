@@ -29,51 +29,45 @@ class TFT_eSPI;
 extern TFT_eSPI guiTft;
 
 // ============================================================================
-// Layout (alle Koordinaten in Display-Pixeln, Rotation 1: 320x240 waagerecht)
-// Eigenstaendiges waagerechtes Layout: F-Tasten links + rechts am Rand,
-// zwei senkrechte Balken (Throttle + Speed-Gauge) zentral dazwischen,
-// oben Lok-Panel + Name/Dropdown/Speed/Licht/Adresse, unten 4 Steuerbuttons.
-// Kein fremder Stil — dieselben Rects, nur anders verteilt.
+// Layout (alle Koordinaten in Display-Pixeln, Rotation 0: 240x320)
 // ============================================================================
 namespace Layout
 {
-    constexpr int16_t screenWidth  = 320;   // waagerecht (Rotation 1)
-    constexpr int16_t screenHeight = 240;
+    constexpr int16_t screenWidth  = 240;
+    constexpr int16_t screenHeight = 320;
 
     constexpr int16_t margin = 4;
     constexpr int16_t gap    = 4;
 
-    // --- Oben: Lok-Panel durchgehend ---
-    constexpr Rect locomotive        = { 4, 4, 312, 36 };
+    constexpr Rect locomotive        = { 4, 4, 232, 38 };
+    constexpr Rect locomotiveName    = { 4, 46, 202, 30 };
+    constexpr Rect locomotiveDropDown= { 209, 46, 27, 30 };
 
-    // --- Zeile 2: Lokname ueber volle Breite ---
-    constexpr Rect locomotiveName    = { 4, 44, 312, 24 };
-    constexpr Rect locomotiveDropDown= { 4, 44, 312, 24 };  // Dropdown im Namen integriert (unsichtbar)
+    constexpr int16_t sideButtonW = 64;
+    constexpr int16_t sideButtonH = 32;
 
-    // --- Zeile 3: Licht (links), blaue Speed-Digital (zentral), Adresse (rechts) ---
-    constexpr Rect lightButton     = { 4, 72, 88, 24 };
-    constexpr Rect speedDisplay      = { 96, 72, 140, 24 };
-    constexpr Rect addressSelector = { 235, 72, 81, 24 };
+    constexpr int16_t leftColumnX  = 4;
+    constexpr int16_t rightColumnX = 172;
 
-    // --- Mitte: zwei senkrechte Balken (Throttle + Speed-Gauge) zentral ---
-    // Zwischen linker F-Spalte (x=4,w=88 -> bis 92) und rechter F-Spalte
-    // (x=228): freier Bereich 92..228. Beide Balken darin zentriert.
-    constexpr Rect throttle   = { 140, 100, 36, 86 };
-    constexpr Rect speedGauge = { 190, 100, 36, 86 };
+    constexpr Rect lightButton     = { leftColumnX, 80, sideButtonW, sideButtonH };
+    constexpr Rect addressSelector = { rightColumnX, 80, sideButtonW, sideButtonH };
+    constexpr Rect speedDisplay    = { 72, 80, 96, 32 };
 
-    // --- Links + rechts: je 4 Reihen Funktionen (F1..F8), sichtbar ---
-    constexpr int16_t functionStartY   = 100;
-    constexpr int16_t functionButtonW  = 88;
-    constexpr int16_t functionButtonH  = 20;
-    constexpr int16_t functionGap      = 2;
-    constexpr int16_t functionLeftX    = 4;
-    constexpr int16_t functionRightX   = 228;   // 2. Spalte (rechts)
+    constexpr int16_t functionStartY   = 120;
+    constexpr int16_t functionButtonW  = sideButtonW;
+    constexpr int16_t functionButtonH  = sideButtonH;
+    constexpr int16_t functionGap      = 4;
 
-    // --- Unten waagerecht: 4 Steuerbuttons nebeneinander ---
-    constexpr Rect accelerateButton = { 4,   196, 74, 40 };
-    constexpr Rect reverseButton    = { 82,  196, 74, 40 };
-    constexpr Rect forwardButton    = { 160, 196, 74, 40 };
-    constexpr Rect emergencyButton  = { 238, 196, 78, 40 };
+    constexpr int16_t functionLeftX  = leftColumnX;
+    constexpr int16_t functionRightX = rightColumnX;
+
+    constexpr Rect throttle   = { 76, 120, 38, 140 };
+    constexpr Rect speedGauge = { 126, 120, 38, 140 };
+
+    constexpr Rect accelerateButton = { 4,   268, 55, 48 };
+    constexpr Rect reverseButton    = { 63,  268, 55, 48 };
+    constexpr Rect forwardButton    = { 122, 268, 55, 48 };
+    constexpr Rect emergencyButton  = { 181, 268, 55, 48 };
 }
 
 // ============================================================================
@@ -95,11 +89,9 @@ void guiBegin();
  * @return void
  * @note Muss GANZ AM ANFANG von setup() stehen (vor touchBegin/logicBegin).
  *       Schaltet Backlight an, blinkt 2x (Signal "setup erreicht, VOR
- *       TFT-init"), dann guiTft.init() + setRotation. Haengt init() (der
- *       vermutete Grund fuer den weissen Schirm), sieht man NACH den 2 Blinks
- *       weiterhin WEISS (Backlight an, kein fillScreen). Gelingt init(),
- *       wird kurz "BOOT" (rot) gezeigt. Danach kann guiBootPhase() Farben
- *       zeichnen, um die Boot-Phase sichtbar zu machen.
+ *       TFT-init"), dann guiTft.init() + setRotation(0). Haengt init()
+ *       (vermuteter Grund fuer weissen Schirm), sieht man NACH den 2 Blinks
+ *       weiterhin WEISS. Gelingt init(), wird kurz "BOOT" (rot) gezeigt.
  */
 void guiInitDisplay();
 
@@ -109,8 +101,6 @@ void guiInitDisplay();
  * @param msg    Anzuzeigender Phasen-Text (z. B. "TOUCH", "LOGIC", "UI")
  * @return void
  * @note Setzt ein bereits initialisiertes TFT voraus (guiInitDisplay()).
- *       Wird in setup() zwischen den Init-Schritten aufgerufen, damit am
- *       Display sichtbar wird, bis wo der Boot kommt (statt weissem Schirm).
  */
 void guiBootPhase(uint16_t color, const char* msg);
 
@@ -118,8 +108,6 @@ void guiBootPhase(uint16_t color, const char* msg);
  * @brief Setzt die Display-Rotation (0=hoch, 1=waagerecht, 2, 3).
  * @param r  Rotationswert (0..3)
  * @return void
- * @note Kapselt guiTft.setRotation(), damit main.cpp den TFT_eSPI-Typ nicht
- *       vollstaendig kennen muss. Nach dem Setzen Vollbild neu zeichnen.
  */
 void guiSetRotation(uint8_t r);
 
@@ -166,17 +154,6 @@ void guiDrawLoopCounter(uint32_t n);
  * @return void
  * @note Wird von touch.cpp (Kalib-Modus) per extern-Callback gerufen.
  */
-// Zeichen-Helfer (exportiert fuer wiederverwendende Module wie gui_horizontal.cpp)
-void drawBeveledButton(int16_t x, int16_t y, int16_t w, int16_t h,
-                       uint16_t fillColor, bool active = false);
-void drawCenteredText(const String& text, int16_t centerX, int16_t centerY,
-                      uint16_t color, uint8_t font = 2,
-                      uint16_t background = 0x0120);  // TFT_TRANSPARENT
-void drawLeftText(const String& text, int16_t x, int16_t centerY,
-                  uint16_t color, uint8_t font = 2,
-                  uint16_t background = 0x0120);  // TFT_TRANSPARENT
-void drawArrowTriangle(int16_t centerX, int16_t centerY,
-                       int16_t size, bool right, uint16_t color);
-void drawLightBulb(int16_t x, int16_t y, bool active);
+void touchDrawCalibCross(int16_t x, int16_t y, uint16_t color);
 
 #endif // GUI_H

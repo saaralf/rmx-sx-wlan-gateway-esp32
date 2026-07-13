@@ -10,6 +10,23 @@ FW_VERSION, Tag und Log jederzeit nachvollziehbar sind.
 
 ---
 
+## [v0.2.19] - 2026-07-13
+### Geändert (Standard-UI zurück auf SENKRECHT, horizontaler Stand gesichert)
+- **Entscheidung (USER):** Senkrechte UI (Rotation 0, 240x320) sieht besser aus
+  als die waagerechte (Rotation 1, 320x240). Standard ist wieder senkrecht.
+- **Sicherung waagerechtes Layout:** Vollständiger horizontaler Stand
+  (Lokname volle Breite, Licht+Adresse neben Speed, F-Tasten 2x4 links/rechts,
+  zwei senkrechte Balken zentral, Schrift verkleinert) als Commit
+  `c109371` auf Branch `feature/horizontal-ui` gesichert + Hermes-Skill
+  `wlanhandregler-horizontal-ui` (für späteres Wiederaufnehmen).
+- **Boot-Debug in Senkrechte zurückportiert:** `guiInitDisplay()` +
+  `guiBootPhase()` + `guiSetRotation()` aus dem waagerechten Stand in die
+  senkrechte `gui.cpp`/`gui.h` übernommen (verhindert weißen/schwarzen Schirm,
+  2x BL-Blink + roter "BOOT"-Screen als Lebenszeichen).
+- **touch.cpp:** Wieder senkrechte Display-Masse (240x320) — der waagerechte
+  Clamp (320x240) aus dem horizontalen Stand wäre in der Senkrechten falsch.
+- **FW_VERSION:** v0.2.18 -> v0.2.19.
+
 ## [v0.2.18] - 2026-07-13
 ### Behoben (schwarzer Schirm — guiInitDisplay() wurde nie aufgerufen)
 - **Befund (USER, nach v0.2.17):** Display schwarz (Backlight aus, keine UI).
