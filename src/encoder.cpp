@@ -60,7 +60,7 @@ void encoderBegin()
     // HIGH = Taster offen, LOW = Taster gedrueckt.
     pinMode(ENC_SW, INPUT);
 
-    g_swLevel    = false;
+    g_swLevel    = digitalRead(ENC_SW) == HIGH;
     g_swPressed  = false;
     g_swDownMs   = 0;
     g_swLongSent = false;
@@ -74,17 +74,42 @@ int32_t encoderPollSteps()
     const uint8_t state = readState();
     int32_t steps = 0;
 
+    // --- Drehung -------------------------------------------------------------
+    // PacoMouseCYD-aehnliches Guarding: Aenderung von A nur beachten, wenn
+    // B unveraendert bleibt. Das filtert Prellen deutlich besser als eine
+    // einfache 35ms-Limiterung allein.
     if (state != g_prevState)
     {
-        if (now - g_lastEventMs >= (uint32_t)ENC_MIN_EVENT_MS)
+        const uint8_t prevA = (g_prevState & 1u);
+        const uint8_t prevB = ((g_prevState >> 1) & 1u);
+        const uint8_t currA = (state & 1u);
+        const uint8_t currB = ((state >> 1) & 1u);
+
+        bool validStep = false;
+        if (prevA != currA && prevB == currB)
         {
-            const int8_t delta = g_encoderDelta[g_prevState * 4 + state];
-            if (delta != 0)
+            // A-Aenderung ohne B-Aenderung: gueltiger Schritt.
+            validStep = true;
+        }
+        else if (prevB != currB && prevA == currA)
+        {
+            // B-Aenderung ohne A-Aenderung: auch gueltig.
+            validStep = true;
+        }
+
+        if (validStep)
+        {
+            if (now - g_lastEventMs >= (uint32_t)ENC_MIN_EVENT_MS)
             {
-                steps = (int32_t)delta * (int32_t)ENC_STEPS_PER_CLICK;
-                g_lastEventMs = now;
+                const int8_t delta = g_encoderDelta[g_prevState * 4 + state];
+                if (delta != 0)
+                {
+                    steps = (int32_t)delta * (int32_t)ENC_STEPS_PER_CLICK;
+                    g_lastEventMs = now;
+                }
             }
         }
+
         g_prevState = state;
     }
 
@@ -98,23 +123,28 @@ bool encoderPollSw(bool* pressed, bool* released, bool* longPress)
     if (longPress) *longPress = false;
 
     const uint32_t now = millis();
-    // Mit Pull-up nach 3.3V: HIGH = offen, LOW = gedrueckt.
-    const bool swNow = digitalRead(ENC_SW) == HIGH;
+    const bool swNow = digitalRead(ENC_SW) == LOW;
 
-    // Fallende Flanke: Taster wurde gedrueckt.
-    if (g_swLevel && !swNow)
+    // Pegelwechsel erkennen, wie PacoMouseCYD mit
+    // statusSwitch != inputButton arbeitet.
+    if (g_swLevel != swNow)
     {
-        g_swPressed  = true;
-        g_swDownMs   = now;
-        g_swLongSent = false;
-        if (pressed) *pressed = true;
-    }
+        g_swLevel = swNow;
 
-    // Steigende Flanke: Taster wurde losgelassen.
-    if (!g_swLevel && swNow && g_swPressed)
-    {
-        g_swPressed = false;
-        if (released) *released = true;
+        // Taster gedrückt: fallende Flanke in LOW-Aktiv-Logik.
+        if (!swNow)
+        {
+            g_swPressed  = true;
+            g_swDownMs   = now;
+            g_swLongSent = false;
+            if (pressed) *pressed = true;
+        }
+        // Taster losgelassen: steigende Flanke.
+        else if (swNow && g_swPressed)
+        {
+            g_swPressed = false;
+            if (released) *released = true;
+        }
     }
 
     // Automatischer Langpress nach definierter Zeit.
@@ -125,7 +155,6 @@ bool encoderPollSw(bool* pressed, bool* released, bool* longPress)
         if (longPress) *longPress = true;
     }
 
-    g_swLevel = swNow;
     return pressed && *pressed || released && *released || longPress && *longPress;
 }
 

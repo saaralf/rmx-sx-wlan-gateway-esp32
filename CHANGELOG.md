@@ -10,6 +10,15 @@ FW_VERSION, Tag und Log jederzeit nachvollziehbar sind.
 
 ---
 
+## [v0.2.23] - 2026-07-13
+### Behoben (Encoder nach PacoMouseCYD-Prinzip)
+- **`src/encoder.cpp`:**
+  - SW LOW-aktiv mit Pegelwechsel-Erkennung wie PacoMouseCYD `readButtons()`
+  - Encoder-Step-Guarding: nur A- oder B-Aenderung ohne gleichzeitige
+    Gegenphase wird als gueltiger Schritt gewertet
+  - Rate-Limit `ENC_MIN_EVENT_MS` bleibt erhalten
+- **FW_VERSION:** v0.2.22 -> v0.2.23
+
 ## [v0.2.22] - 2026-07-13
 ### Behoben (Encoder-Taster polaritaet)
 - **Pull-up nach 3.3V:** Taster LOW-aktiv auswerten.
