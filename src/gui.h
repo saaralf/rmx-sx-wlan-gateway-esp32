@@ -84,6 +84,34 @@ namespace Layout
 void guiBegin();
 
 /**
+ * @brief Fruehes TFT-Init fuer visuelles Boot-Debugging.
+ * @param keine
+ * @return void
+ * @note Muss GANZ AM ANFANG von setup() stehen (vor touchBegin/logicBegin).
+ *       Schaltet Backlight an, blinkt 2x (Signal "setup erreicht, VOR
+ *       TFT-init"), dann guiTft.init() + setRotation(0). Haengt init()
+ *       (vermuteter Grund fuer weissen Schirm), sieht man NACH den 2 Blinks
+ *       weiterhin WEISS. Gelingt init(), wird kurz "BOOT" (rot) gezeigt.
+ */
+void guiInitDisplay();
+
+/**
+ * @brief Zeigt eine Boot-Phase als Vollbild in einer Farbe mit Text.
+ * @param color  Hintergrundfarbe (TFT_*-Konstante)
+ * @param msg    Anzuzeigender Phasen-Text (z. B. "TOUCH", "LOGIC", "UI")
+ * @return void
+ * @note Setzt ein bereits initialisiertes TFT voraus (guiInitDisplay()).
+ */
+void guiBootPhase(uint16_t color, const char* msg);
+
+/**
+ * @brief Setzt die Display-Rotation (0=hoch, 1=waagerecht, 2, 3).
+ * @param r  Rotationswert (0..3)
+ * @return void
+ */
+void guiSetRotation(uint8_t r);
+
+/**
  * @brief Zeichnet das komplette statische Layout neu (Voll-Refresh).
  * @param keine
  * @return void
