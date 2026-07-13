@@ -10,6 +10,13 @@ FW_VERSION, Tag und Log jederzeit nachvollziehbar sind.
 
 ---
 
+## [v0.2.22] - 2026-07-13
+### Behoben (Encoder-Taster polaritaet)
+- **Pull-up nach 3.3V:** Taster LOW-aktiv auswerten.
+- **SW-Kurz:** toggelt Modus S/A.
+- **SW-Lang:** sendet **nur** `emergency_stop`; keine Blockade der GUI/Loop.
+- API auf Rotation (`encoderPollSteps()`) und Taster (`encoderPollSw()`) getrennt.
+
 ## [v0.2.21] - 2026-07-13
 ### Behoben (Encoder-Prellen, Ruecksprünge, Modus nicht sichtbar)
 - **`src/encoder.cpp`:** Rate-Limiter `ENC_MIN_EVENT_MS=35` + saubere

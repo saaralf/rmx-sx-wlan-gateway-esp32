@@ -39,6 +39,24 @@ void encoderBegin();
 bool encoderPoll(EncoderEvent* out);
 
 /**
+ * @brief Liefert nur Dreh-Impulse ohne Taster-Events.
+ *
+ * @return Anzahl Schritte seit letztem Aufruf, 0 = keine Drehung
+ * @note SW wird NICHT ausgewertet. Trennung: Rotation vs. Taster.
+ */
+int32_t encoderPollSteps();
+
+/**
+ * @brief Liefert nur Taster-Events, ohne Drehung.
+ *
+ * @param pressed   true bei gerade gedrueckt
+ * @param released  true bei gerade losgelassen
+ * @param longPress true bei gehalten >= ENC_SW_LONG_MS
+ * @return true wenn eines der Ereignisse eingetreten ist
+ */
+bool encoderPollSw(bool* pressed, bool* released, bool* longPress);
+
+/**
  * @brief Wechselt den aktuellen Encoder-Modus.
  *
  * @return neuer Modus nach Wechsel

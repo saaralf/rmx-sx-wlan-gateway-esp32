@@ -203,38 +203,23 @@ void logicSetOnline(bool online)
     logicOnline = online;
 }
 
-bool logicApplyEncoder(const EncoderEvent& ev)
+bool logicApplyEncoder(int32_t steps)
 {
-    if (ev.longPress)
-    {
-        logicTargetSpeed = 0;
-        logicSpeed = 0;
-        logicEmergencyStopRequested = true;
-        logicDirtyDrive = true;
-        return true;
-    }
-
-    if (ev.pressed)
-    {
-        encoderToggleMode();
-        return false;
-    }
-
-    if (ev.steps != 0)
+    bool changed = false;
+    if (steps != 0)
     {
         if (encoderMode == EncoderMode::SPEED)
         {
-            logicTargetSpeed = constrain(logicTargetSpeed + ev.steps * 2, 0, 99);
+            logicTargetSpeed = constrain(logicTargetSpeed + steps * 2, 0, 99);
         }
         else
         {
-            logicAddress = (uint8_t)constrain((int)logicAddress + ev.steps, 0, 127);
+            logicAddress = (uint8_t)constrain((int)logicAddress + steps, 0, 127);
             logicSpeed = logicTargetSpeed = 0;
             logicDirtySelect = true;
         }
         logicDirtyDrive = true;
-        return true;
+        changed = true;
     }
-
-    return false;
+    return changed;
 }

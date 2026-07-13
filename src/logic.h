@@ -48,7 +48,7 @@ extern bool logicEmergencyStopRequested;  //!< STOP-Taster: emergency_stop sende
  * @param ev  Encoder-Ereignis
  * @return true wenn eine Aenderung ansteht, die gesendet/gezeichnet werden soll
  */
-bool logicApplyEncoder(const EncoderEvent& ev);
+bool logicApplyEncoder(int32_t steps);
 
 /**
  * @brief Initialisiert den Logic-Zustand mit Demo-Werten.

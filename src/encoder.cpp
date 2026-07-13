@@ -56,8 +56,8 @@ void encoderBegin()
     pinMode(ENC_CLK, INPUT_PULLUP);
     pinMode(ENC_DT,  INPUT_PULLUP);
 
-    // SW: IO35 ist Input Only und hat KEINE internen Pull-ups.
-    // Das Modul sollte einen externen Pull-up nach 3.3V haben.
+    // SW: IO35 ist Input Only. Mit aktivem Pull-up nach 3.3V liegt hier
+    // HIGH = Taster offen, LOW = Taster gedrueckt.
     pinMode(ENC_SW, INPUT);
 
     g_swLevel    = false;
@@ -68,69 +68,65 @@ void encoderBegin()
     g_lastEventMs = 0;
 }
 
-bool encoderPoll(EncoderEvent* out)
+int32_t encoderPollSteps()
 {
-    if (out)
-    {
-        out->steps     = 0;
-        out->pressed   = false;
-        out->released  = false;
-        out->longPress = false;
-    }
-
     const uint32_t now = millis();
     const uint8_t state = readState();
-    bool event = false;
+    int32_t steps = 0;
 
-    // --- Drehung -------------------------------------------------------------
     if (state != g_prevState)
     {
-        // Rate-Limit: Mindestabstand zwischen Encoder-Events,
-        // damit Prellen oder zu schnelles Drehen keine Sprünge erzeugt.
         if (now - g_lastEventMs >= (uint32_t)ENC_MIN_EVENT_MS)
         {
             const int8_t delta = g_encoderDelta[g_prevState * 4 + state];
             if (delta != 0)
             {
-                if (out) out->steps = (int32_t)delta * (int32_t)ENC_STEPS_PER_CLICK;
-                event = true;
+                steps = (int32_t)delta * (int32_t)ENC_STEPS_PER_CLICK;
                 g_lastEventMs = now;
             }
         }
-
-        // Auch ungültige Phasenwechsel als neuen Ausgangspunkt nehmen,
-        // sonst bleibt der Encoder "hängen".
         g_prevState = state;
     }
 
-    // --- Taster SW -----------------------------------------------------------
+    return steps;
+}
+
+bool encoderPollSw(bool* pressed, bool* released, bool* longPress)
+{
+    if (pressed)   *pressed   = false;
+    if (released)  *released  = false;
+    if (longPress) *longPress = false;
+
+    const uint32_t now = millis();
+    // Mit Pull-up nach 3.3V: HIGH = offen, LOW = gedrueckt.
     const bool swNow = digitalRead(ENC_SW) == HIGH;
-    if (!g_swLevel && swNow)
+
+    // Fallende Flanke: Taster wurde gedrueckt.
+    if (g_swLevel && !swNow)
     {
         g_swPressed  = true;
         g_swDownMs   = now;
         g_swLongSent = false;
-        if (out) out->pressed = true;
-        event = true;
+        if (pressed) *pressed = true;
     }
 
-    if (g_swLevel && !swNow && g_swPressed)
+    // Steigende Flanke: Taster wurde losgelassen.
+    if (!g_swLevel && swNow && g_swPressed)
     {
         g_swPressed = false;
-        if (out) out->released = true;
-        event = true;
+        if (released) *released = true;
     }
 
+    // Automatischer Langpress nach definierter Zeit.
     if (g_swPressed && !g_swLongSent &&
         (now - g_swDownMs >= (uint32_t)ENC_SW_LONG_MS))
     {
         g_swLongSent = true;
-        if (out) out->longPress = true;
-        event = true;
+        if (longPress) *longPress = true;
     }
 
     g_swLevel = swNow;
-    return event;
+    return pressed && *pressed || released && *released || longPress && *longPress;
 }
 
 EncoderMode encoderToggleMode()

@@ -130,10 +130,10 @@ void loop()
         else
         {
             // --- Drehregler ---
-            EncoderEvent ev;
-            if (encoderPoll(&ev))
+            int32_t steps = encoderPollSteps();
+            if (steps != 0)
             {
-                const bool changed = logicApplyEncoder(ev);
+                const bool changed = logicApplyEncoder(steps);
                 if (changed)
                 {
                     if (logicDirtySelect)
@@ -167,6 +167,32 @@ void loop()
                 }
 
                 guiUpdateDynamic();
+            }
+
+            // --- Encoder-Taster ---
+            {
+                bool pressed = false;
+                bool released = false;
+                bool longPress = false;
+                if (encoderPollSw(&pressed, &released, &longPress))
+                {
+                    if (longPress)
+                    {
+                        logicTargetSpeed = 0;
+                        logicSpeed = 0;
+                        logicEmergencyStopRequested = true;
+                        logicDirtyDrive = true;
+                        commSendEmergencyStop();
+                        logicEmergencyStopRequested = false;
+                        logicDirtyDrive = false;
+                    }
+                    else if (pressed)
+                    {
+                        encoderToggleMode();
+                    }
+
+                    guiUpdateDynamic();
+                }
             }
         }
     }
