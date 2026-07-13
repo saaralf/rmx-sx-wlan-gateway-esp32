@@ -168,6 +168,38 @@ void loop()
 
                 guiUpdateDynamic();
             }
+<<<<<<< HEAD
+=======
+
+            // --- Encoder-Taster ---
+            {
+                bool pressed = false;
+                bool released = false;
+                bool longPress = false;
+                if (encoderPollSw(&pressed, &released, &longPress))
+                {
+                    Serial.printf("SW pressed=%d released=%d longPress=%d\n",
+                                  pressed, released, longPress);
+
+                    if (longPress)
+                    {
+                        logicTargetSpeed = 0;
+                        logicSpeed = 0;
+                        logicEmergencyStopRequested = true;
+                        logicDirtyDrive = true;
+                        commSendEmergencyStop();
+                        logicEmergencyStopRequested = false;
+                        logicDirtyDrive = false;
+                    }
+                    else if (pressed)
+                    {
+                        encoderToggleMode();
+                    }
+
+                    guiUpdateDynamic();
+                }
+            }
+>>>>>>> 621b8f0 (fix: move encoder SW from IO35 to IO4 (v0.2.24))
         }
     }
 
