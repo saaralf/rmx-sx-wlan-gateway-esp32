@@ -22,10 +22,18 @@
 
 #include <Arduino.h>
 
+// ---- Lokale WLAN-Credentials (gitignored) ---------------------------------
+// WIFI_SSID + WIFI_PASSWORD werden per -D Build-Flag aus gitignored
+// platformio.local.ini (extra_configs in platformio.ini) gesetzt. Quelle:
+// ~/.hermes/.env WLANPASS, einheitlich mit dem Pi-AP. Fehlt platformio.local.ini
+// (z.B. fremder Klon ohne Secret), greift der Platzhalter weiter unten.
+// Die Datei wird NICHT committet (.gitignore), damit das Passwort nicht ins
+// Repo gelangt. ACHTUNG: der Build-Flag heisst WIFI_PASSWORD (nicht WLAN_*)!
+
 // ---- Firmware-Version ------------------------------------------------------
 // Wird oben links auf dem Display gedruckt und sollte vor jedem funktionalen
 // Firmware-Test gebumppt werden (Vorgabe im Projekt).
-#define FW_VERSION "v0.2.13"
+#define FW_VERSION "v0.2.14"
 
 // ---- Gateway-Verbindung (ueberschreibbar via platformio.ini build_flags) ---
 #ifndef GW_HOST
