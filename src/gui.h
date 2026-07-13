@@ -155,14 +155,6 @@ void guiDrawDebugTouch(bool touched, int16_t rx, int16_t ry,
 void guiDrawLoopCounter(uint32_t n);
 
 /**
- * @brief Zeichnet die Encoder-Modus-Anzeige (Speed/Adresse) oben rechts.
- * @param mode  0 = Speed-Modus, 1 = Adress-Modus
- * @return void
- * @note Nur bei DEBUG_OVERLAY=1.
- */
-void guiDrawEncoderMode(uint8_t mode);
-
-/**
  * @brief Zeichnet ein kleines Kreuz + Kreis an eine Display-Ecke
  *        (waehrend der Touch-Kalibrierung).
  * @param x,y    Eck-Position in Pixeln (Rotation 0)

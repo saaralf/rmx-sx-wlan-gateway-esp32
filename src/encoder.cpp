@@ -4,8 +4,9 @@
 // Pollt CLK/DT/SW und erzeugt EncoderEvent-Strukturen fuer Logic/GUI.
 //
 // Besonderheiten:
-//   - CLK/DT ueber 4-Phasen-Zustandsmaschine
+//   - CLK/DT ueber 4-Phasen-Zustandsmaschine mit gueltiger Phasendifferenz
 //   - SW ist Input Only -> Edge-Auswertung + Entprellung + Longpress
+//   - Zusätzliche Rate-Limiter gegen Prellen und Mehrfach-Events
 // ============================================================================
 
 #include "encoder.h"
@@ -22,10 +23,13 @@ static bool     g_swPressed   = false;
 static uint32_t g_swDownMs    = 0;
 static bool     g_swLongSent  = false;
 
+// Vorheriger gültiger Encoder-Phasenstand (0..3).
+// Ungültige Übergänge durch Prellen werden verworfen.
 static uint8_t  g_prevState   = 0;
+static uint32_t g_lastEventMs = 0;
 
-// Transitionstabelle fuer EC11-Quadratur (index = prev*4 + curr).
-// +1 = CW, -1 = CCW, 0 = kein Schritt.
+// Gültige Quadratur-Übergangstabelle: index = prev*4 + curr.
+// +1 = CW, -1 = CCW, 0 = ungültig/Prellen.
 static const int8_t g_encoderDelta[16] =
 {
      0, -1, +1,  0,
@@ -61,6 +65,7 @@ void encoderBegin()
     g_swDownMs   = 0;
     g_swLongSent = false;
     g_prevState  = readState();
+    g_lastEventMs = 0;
 }
 
 bool encoderPoll(EncoderEvent* out)
@@ -73,18 +78,28 @@ bool encoderPoll(EncoderEvent* out)
         out->longPress = false;
     }
 
+    const uint32_t now = millis();
     const uint8_t state = readState();
     bool event = false;
 
     // --- Drehung -------------------------------------------------------------
     if (state != g_prevState)
     {
-        const int8_t delta = g_encoderDelta[g_prevState * 4 + state];
-        if (delta != 0)
+        // Rate-Limit: Mindestabstand zwischen Encoder-Events,
+        // damit Prellen oder zu schnelles Drehen keine Sprünge erzeugt.
+        if (now - g_lastEventMs >= (uint32_t)ENC_MIN_EVENT_MS)
         {
-            if (out) out->steps = (int32_t)delta * (int32_t)ENC_STEPS_PER_CLICK;
-            event = true;
+            const int8_t delta = g_encoderDelta[g_prevState * 4 + state];
+            if (delta != 0)
+            {
+                if (out) out->steps = (int32_t)delta * (int32_t)ENC_STEPS_PER_CLICK;
+                event = true;
+                g_lastEventMs = now;
+            }
         }
+
+        // Auch ungültige Phasenwechsel als neuen Ausgangspunkt nehmen,
+        // sonst bleibt der Encoder "hängen".
         g_prevState = state;
     }
 
@@ -93,7 +108,7 @@ bool encoderPoll(EncoderEvent* out)
     if (!g_swLevel && swNow)
     {
         g_swPressed  = true;
-        g_swDownMs   = millis();
+        g_swDownMs   = now;
         g_swLongSent = false;
         if (out) out->pressed = true;
         event = true;
@@ -107,7 +122,7 @@ bool encoderPoll(EncoderEvent* out)
     }
 
     if (g_swPressed && !g_swLongSent &&
-        (millis() - g_swDownMs >= (uint32_t)ENC_SW_LONG_MS))
+        (now - g_swDownMs >= (uint32_t)ENC_SW_LONG_MS))
     {
         g_swLongSent = true;
         if (out) out->longPress = true;

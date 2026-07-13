@@ -33,7 +33,7 @@
 // ---- Firmware-Version ------------------------------------------------------
 // Wird oben links auf dem Display gedruckt und sollte vor jedem funktionalen
 // Firmware-Test gebumppt werden (Vorgabe im Projekt).
-#define FW_VERSION "v0.2.20"
+#define FW_VERSION "v0.2.21"
 
 // ---- Gateway-Verbindung (ueberschreibbar via platformio.ini build_flags) ---
 #ifndef GW_HOST
@@ -85,6 +85,7 @@
 #define ENC_DEBOUNCE_MS     5                  //!< Taster-Entprellung
 #define ENC_SW_LONG_MS      500                //!< Grenze kurz vs. lang
 #define ENC_STEPS_PER_CLICK 1                  //!< Encoder-Auflösung pro Raste
+#define ENC_MIN_EVENT_MS    35                 //!< Mindestabstand zwischen Encoder-Events
 
 // ---- Touch-Kalibrierung (Startwerte, werden zur Laufzeit auto-kalibriert) -
 // Grobe Roh-Grenzen fuer das 2.8" CYD Panel (0..4095). Werden beim Boot
