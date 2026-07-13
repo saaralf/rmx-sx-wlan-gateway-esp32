@@ -136,6 +136,14 @@ void guiUpdateDynamic();
  * @return void
  * @note Dient der visuellen Verifikation der Touch-Koordinaten.
  */
+/**
+ * @brief Aktualisiert eine Encoder-Modus-Anzeige im Status-/Head-Bereich.
+ * @param mode  0 = Speed, 1 = Adresse
+ * @return void
+ * @note Wird von main.cpp bei Moduswechsel aufgerufen.
+ */
+void guiDrawEncoderMode(uint8_t mode);
+
 void guiDrawDebugTouch(bool touched, int16_t rx, int16_t ry,
                       int16_t mx, int16_t my);
 
@@ -145,6 +153,14 @@ void guiDrawDebugTouch(bool touched, int16_t rx, int16_t ry,
  * @return void
  */
 void guiDrawLoopCounter(uint32_t n);
+
+/**
+ * @brief Zeichnet die Encoder-Modus-Anzeige (Speed/Adresse) oben rechts.
+ * @param mode  0 = Speed-Modus, 1 = Adress-Modus
+ * @return void
+ * @note Nur bei DEBUG_OVERLAY=1.
+ */
+void guiDrawEncoderMode(uint8_t mode);
 
 /**
  * @brief Zeichnet ein kleines Kreuz + Kreis an eine Display-Ecke

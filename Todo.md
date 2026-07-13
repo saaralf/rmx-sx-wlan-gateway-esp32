@@ -70,6 +70,27 @@ Offen danach (kuenftige Zyklen, eigene Branches/Todos):
 - Zyklus 7: F0..F16 -> SX-Bit-Mapping Tabelle pro Lok.
 
 ==================================================================
+ZYKLUS 8: Rotary Encoder (CLK/DT/SW) auf CN1/P3
+==================================================================
+Ziel-Version: **v0.2.20** (Code-Change gegenueber v0.2.19 -> Pflicht-Bump)
+
+Status vorab (verifiziert 2026-07-13):
+- Pins aus CYD-Doku bestaetigt: CLK=IO22, DT=IO27, SW=IO35.
+- RMX/SX-Treiber bleiben bewusst PAUSIERT; Encoder zunaechst parallel zum Touch.
+
+Aufgaben:
+- [x] Z8-T1  Branch `feature/rotary-encoder` von main angelegt.
+- [x] Z8-T2  `src/config.h`: ENC_CLK/DT/SW + Entprellung + Longpress definiert.
+- [x] Z8-T3  `src/types.h`: `EncoderMode`, `EncoderEvent` ergaenzt.
+- [x] Z8-T4  `src/encoder.h/.cpp`: Polling + Quadratur-State + SW-Edge + Longpress.
+- [x] Z8-T5  `src/logic.h/.cpp`: `encoderMode`, `logicApplyEncoder()`, Moduswechsel + Notstopp via SW.
+- [x] Z8-T6  `src/main.cpp`: `encoderBegin()` in setup(), Loop-Polling, Sendepflege analog zu Touch.
+- [x] Z8-T7  FW_VERSION v0.2.19 -> v0.2.20 + CHANGELOG-Eintrag + Commit auf Feature-Branch.
+- [x] Z8-T8  Build `pio run`.
+- [ ] Z8-T9  PR #36 gegen main + Merge + `git tag v0.2.20` + push.
+- [ ] Z8-T10 (USER) Hardware-Test: Encoder-CLK/DT drehen, SW kurz/lang, Touch bleibt funktionsfaehig.
+
+==================================================================
 GATEWAY-REPO: rmx-sx-gateway (Raspi-Daemon) — Setup + Versionierung (v0.1.1)
 ==================================================================
 Kontext: Quellcode vom Raspi (192.168.0.87:/opt/rmx-sx-gateway) geholt,

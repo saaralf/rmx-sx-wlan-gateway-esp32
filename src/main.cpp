@@ -24,6 +24,7 @@
 #include "config.h"
 #include "touch.h"
 #include "logic.h"
+#include "encoder.h"
 #include "comm.h"
 #include "gui.h"
 
@@ -57,6 +58,7 @@ void setup()
     guiInitDisplay(); // TFT-Init + Backlight an (+ 2x Blink) MUSS vor touchBegin/logicBegin stehen (gui.h)
     touchBegin();   // Touch-Pins (Bit-Bang) initialisieren
     logicBegin();   // Demo-Startzustaende
+    encoderBegin(); // Drehregler initialisieren
     guiBegin();     // Vollbild UI (TFT ist bereits via guiInitDisplay() initialisiert)
     commBegin({ onGatewayState, onGatewayOnline, onGatewayRedraw });
 
@@ -81,7 +83,6 @@ void loop()
         int16_t px = 0, py = 0;
         if (touchGetTap(&px, &py))   // true NUR beim Uebergang released->pressed
         {
-            // 1) Geschaeftslogik: State aendern (kein IO)
             bool changed = logicApplyTouch(px, py);
 
             // 2) Wenn geaendert -> Gateway informieren (Comm)
@@ -123,12 +124,50 @@ void loop()
                 }
             }
 
-            // 3) GUI: dynamische Teile neu zeichnen
+            // 3) GUI: statische/dynamische Teile neu zeichnen
             guiUpdateDynamic();
         }
         else
         {
-            // Kein Touch: nichts tun (Bild bleibt, KEIN gruen-Bug)
+            // --- Drehregler ---
+            EncoderEvent ev;
+            if (encoderPoll(&ev))
+            {
+                const bool changed = logicApplyEncoder(ev);
+                if (changed)
+                {
+                    if (logicDirtySelect)
+                    {
+                        commSendSelectLoco(logicAddress);
+                        commSendRequestState(logicAddress);
+                        logicDirtySelect = false;
+                    }
+                    if (logicDirtyDrive)
+                    {
+                        const char* dir = (logicDirection == Direction::FORWARD)
+                                            ? "forward" : "reverse";
+
+                        if (logicEmergencyStopRequested)
+                        {
+                            commSendEmergencyStop();
+                            logicEmergencyStopRequested = false;
+                        }
+                        else
+                        {
+                            commSendDrive(logicAddress, logicTargetSpeed, dir);
+                        }
+
+                        commSendFunction(logicAddress, 0, logicLightOn);
+                        for (int i = 0; i < 16; i++)
+                            commSendFunction(logicAddress,
+                                             logicFunctions[i].functionNumber,
+                                             logicFunctions[i].active);
+                        logicDirtyDrive = false;
+                    }
+                }
+
+                guiUpdateDynamic();
+            }
         }
     }
 

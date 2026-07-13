@@ -9,6 +9,7 @@
 
 #include "logic.h"
 #include "gui.h"     // Layout-Konstanten (Button-Rects)
+#include "encoder.h" // Drehregler
 
 // ---- Zustandsvariablen ----------------------------------------------------
 int       logicSpeed        = 0;
@@ -30,6 +31,7 @@ FunctionConfig logicFunctions[16] =
 bool logicDirtyDrive  = false;
 bool logicDirtySelect = false;
 bool logicEmergencyStopRequested = false;
+EncoderMode encoderMode = EncoderMode::SPEED;
 
 // ---- Hilfsfunktion --------------------------------------------------------
 static bool pointInRect(int16_t x, int16_t y, const Rect& r)
@@ -199,4 +201,40 @@ void logicSetState(uint8_t addr, int speed, const char* dir,
 void logicSetOnline(bool online)
 {
     logicOnline = online;
+}
+
+bool logicApplyEncoder(const EncoderEvent& ev)
+{
+    if (ev.longPress)
+    {
+        logicTargetSpeed = 0;
+        logicSpeed = 0;
+        logicEmergencyStopRequested = true;
+        logicDirtyDrive = true;
+        return true;
+    }
+
+    if (ev.pressed)
+    {
+        encoderToggleMode();
+        return false;
+    }
+
+    if (ev.steps != 0)
+    {
+        if (encoderMode == EncoderMode::SPEED)
+        {
+            logicTargetSpeed = constrain(logicTargetSpeed + ev.steps * 2, 0, 99);
+        }
+        else
+        {
+            logicAddress = (uint8_t)constrain((int)logicAddress + ev.steps, 0, 127);
+            logicSpeed = logicTargetSpeed = 0;
+            logicDirtySelect = true;
+        }
+        logicDirtyDrive = true;
+        return true;
+    }
+
+    return false;
 }
