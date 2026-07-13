@@ -30,6 +30,7 @@ extern uint8_t   logicAddress;      //!< Aktive Lokadresse (1..255)
 extern bool      logicLightOn;      //!< F0 / Licht an?
 extern Direction logicDirection;    //!< Fahrtrichtung
 extern bool      logicOnline;       //!< Gateway-Verbindung steht?
+extern EncoderMode encoderMode;     //!< Aktueller Drehregler-Modus
 
 // Sichtbare Funktionen in den 8 Faechern (2 Spalten x 4 Reihen)
 extern uint8_t   logicVisibleFunctions[8];
@@ -40,6 +41,14 @@ extern FunctionConfig logicFunctions[16];
 extern bool logicDirtyDrive;        //!< Geschwindigkeit/Richtung aenderung offen
 extern bool logicDirtySelect;       //!< Lokwechsel offen
 extern bool logicEmergencyStopRequested;  //!< STOP-Taster: emergency_stop senden
+
+/**
+ * @brief Wendet ein Encoder-Ereignis auf den Fahrregler-State an.
+ *
+ * @param ev  Encoder-Ereignis
+ * @return true wenn eine Aenderung ansteht, die gesendet/gezeichnet werden soll
+ */
+bool logicApplyEncoder(const EncoderEvent& ev);
 
 /**
  * @brief Initialisiert den Logic-Zustand mit Demo-Werten.

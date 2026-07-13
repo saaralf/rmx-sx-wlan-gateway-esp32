@@ -33,7 +33,7 @@
 // ---- Firmware-Version ------------------------------------------------------
 // Wird oben links auf dem Display gedruckt und sollte vor jedem funktionalen
 // Firmware-Test gebumppt werden (Vorgabe im Projekt).
-#define FW_VERSION "v0.2.19"
+#define FW_VERSION "v0.2.20"
 
 // ---- Gateway-Verbindung (ueberschreibbar via platformio.ini build_flags) ---
 #ifndef GW_HOST
@@ -73,6 +73,18 @@
 #define TOUCH_MISO 39              //!< T_OUT  (Bit-Bang MISO)
 #define TOUCH_CS   33              //!< T_CS   (Chip-Select, active LOW)
 #define TOUCH_IRQ  36              //!< T_IRQ  (Touch-Interrupt, active LOW)
+
+// ---- Drehregler (EC11/KY-040, CN1/P3) ----------------------------------
+// Quelle: https://github.com/witnessmenow/ESP32-Cheap-Yellow-Display/blob/main/PINS.md
+//   CLK -> IO22, DT -> IO27, SW -> IO35
+// SW ist Input Only ohne interne Pull-ups; das Modul sollte einen externen
+// Pull-up haben, sonst muss ein 10k nach 3.3V ergänzt werden.
+#define ENC_CLK             22                 //!< CLK an CN1/P3
+#define ENC_DT              27                 //!< DT  an CN1
+#define ENC_SW              35                 //!< SW  an P3 (Input Only)
+#define ENC_DEBOUNCE_MS     5                  //!< Taster-Entprellung
+#define ENC_SW_LONG_MS      500                //!< Grenze kurz vs. lang
+#define ENC_STEPS_PER_CLICK 1                  //!< Encoder-Auflösung pro Raste
 
 // ---- Touch-Kalibrierung (Startwerte, werden zur Laufzeit auto-kalibriert) -
 // Grobe Roh-Grenzen fuer das 2.8" CYD Panel (0..4095). Werden beim Boot

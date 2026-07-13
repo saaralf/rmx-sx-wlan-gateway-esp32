@@ -10,6 +10,22 @@ FW_VERSION, Tag und Log jederzeit nachvollziehbar sind.
 
 ---
 
+## [v0.2.20] - 2026-07-13
+### Hinzugefuegt (Rotary Encoder CLK/DT/SW auf CN1/P3)
+- **Hardware:** EC11/KY-040 angeschlossen an IO22/IO27/IO35
+  (CLK/Dual-Step-Quadratur + SW als Taster).
+- **`src/encoder.h/.cpp`:** Neues Modul fuer Polling, 4-Phasen-Quadratur-Auswertung,
+  SW-Edge-Detection, Entprellung und Longpress.
+- **`src/types.h`:** `EncoderMode` + `EncoderEvent` ergaenzt.
+- **`src/logic.h/.cpp`:** `encoderMode`, `logicApplyEncoder()`
+  - kurzer SW-Druck: Moduswechsel SPEED <-> ADDRESS
+  - lange SW-Druck: Notstopp
+  - Drehung: +2/-2 Speed im Speed-Modus, +1/-1 Adresse im Adress-Modus
+- **`src/main.cpp`:** Encoder-Polling neben Touch; Sendepflege ueber bestehende
+  dirty-Flags, kein neuer Websocket-Pfad notwendig.
+- **Touch bleibt erhalten**, Rotation/Taster sind parallel zum Touch laid out.
+- **FW_VERSION:** v0.2.19 -> v0.2.20.
+
 ## [v0.2.19] - 2026-07-13
 ### Geändert (Standard-UI zurück auf SENKRECHT, horizontaler Stand gesichert)
 - **Entscheidung (USER):** Senkrechte UI (Rotation 0, 240x320) sieht besser aus

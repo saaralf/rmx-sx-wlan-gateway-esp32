@@ -2,8 +2,8 @@
 // types.h — Allgemeine Datentypen und Grundstrukturen
 // ----------------------------------------------------------------------------
 // Enthaelt die reinen Datenstrukturen (POD), die von mehreren Modulen
-// (GUI, Logic, Touch) gemeinsam genutzt werden. Bewusst KEIN Code, nur
-// Typen + kurze Dokumentation, damit keine zyklischen Abhaengigkeiten
+// (GUI, Logic, Touch, Encoder) gemeinsam genutzt werden. Bewusst KEIN Code,
+// nur Typen + kurze Dokumentation, damit keine zyklischen Abhaengigkeiten
 // zwischen den Modul-Headern entstehen.
 // ============================================================================
 
@@ -50,6 +50,26 @@ struct TSPoint
     uint16_t x;   //!< Roh-X (0..4095, nach Rotation)
     uint16_t y;   //!< Roh-Y (0..4095, nach Rotation)
     uint16_t z;   //!< Druckstaerke (Z-Differenz, je groesser desto fester)
+};
+
+/**
+ * @brief Betriebsmodus des Drehreglers.
+ */
+enum class EncoderMode : uint8_t
+{
+    SPEED,     //!< Drehung aendert Zielgeschwindigkeit
+    ADDRESS    //!< Drehung aendert Lokadresse
+};
+
+/**
+ * @brief Ereignis aus dem Drehregler.
+ */
+struct EncoderEvent
+{
+    int32_t  steps;      //!< +1 / -1 pro Raste
+    bool     pressed;    //!< true bei gueltigem Taster-Down
+    bool     released;   //!< true bei gueltigem Taster-Up
+    bool     longPress;  //!< true wenn lange gedrueckt
 };
 
 /**
