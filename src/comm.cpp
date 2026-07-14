@@ -26,6 +26,11 @@ const char* gwVersion = gwVersionBuf;
 // ---- WiFi ----------------------------------------------------------------
 static void connectWiFi()
 {
+    if (WiFi.status() == WL_CONNECTED)
+    {
+        return;
+    }
+
     Serial.printf("Connecting to %s ...\n", WIFI_SSID);
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
     int tries = 0;
@@ -189,9 +194,16 @@ void commBegin(const CommCallbacks& cb)
 {
     gCb = cb;
     connectWiFi();
+
+    if (WiFi.status() != WL_CONNECTED)
+    {
+        Serial.println("[comm] kein WiFi -> WS bleibt AUS");
+        return;
+    }
+
     ws.begin(GW_HOST, GW_PORT, "/ws");
     ws.onEvent(webSocketEvent);
-    ws.setReconnectInterval(2000);
+    ws.setReconnectInterval(10000);
 }
 
 void commLoop()

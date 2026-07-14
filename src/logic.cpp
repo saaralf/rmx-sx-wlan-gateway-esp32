@@ -207,6 +207,7 @@ bool logicApplyEncoder(const EncoderEvent& ev)
 {
     if (ev.longPress)
     {
+        Serial.println("[encoder] LONGPRESS -> emergency stop");
         logicTargetSpeed = 0;
         logicSpeed = 0;
         logicEmergencyStopRequested = true;
@@ -217,6 +218,8 @@ bool logicApplyEncoder(const EncoderEvent& ev)
     if (ev.pressed)
     {
         encoderToggleMode();
+        Serial.printf("[encoder] MODE -> %s\n",
+                      encoderMode == EncoderMode::SPEED ? "SPEED" : "ADDRESS");
         return false;
     }
 
@@ -224,13 +227,21 @@ bool logicApplyEncoder(const EncoderEvent& ev)
     {
         if (encoderMode == EncoderMode::SPEED)
         {
+            const int oldTarget = logicTargetSpeed;
             logicTargetSpeed = constrain(logicTargetSpeed + ev.steps * 2, 0, 99);
+            if (logicTargetSpeed != oldTarget)
+                Serial.printf("[encoder] SPEED delta=%d target=%d\n",
+                              ev.steps * 2, logicTargetSpeed);
         }
         else
         {
+            const uint8_t oldAddr = logicAddress;
             logicAddress = (uint8_t)constrain((int)logicAddress + ev.steps, 0, 127);
             logicSpeed = logicTargetSpeed = 0;
             logicDirtySelect = true;
+            if (logicAddress != oldAddr)
+                Serial.printf("[encoder] ADDRESS delta=%d addr=%d\n",
+                              ev.steps, logicAddress);
         }
         logicDirtyDrive = true;
         return true;

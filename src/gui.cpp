@@ -476,6 +476,15 @@ void guiDrawScreen()
  */
 void guiUpdateDynamic()
 {
+    constexpr uint32_t kMinDynamicMs = 100;
+    static uint32_t lastDynamicMs = 0;
+    const uint32_t now = millis();
+    if (now - lastDynamicMs < kMinDynamicMs)
+    {
+        return;
+    }
+    lastDynamicMs = now;
+
     const Rect& slider = Layout::throttle;
     const Rect& gauge  = Layout::speedGauge;
     // Bereich um Slider + Gauge loeschen
