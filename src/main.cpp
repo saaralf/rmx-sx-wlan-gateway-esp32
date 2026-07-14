@@ -27,24 +27,28 @@
 #include "encoder.h"
 #include "comm.h"
 #include "gui.h"
+#include "sdcard.h"
 
 // ---- Verdrahtung: Comm -> Logic ------------------------------------------
 // Wird vom Gateway gemeldeter Lok-Status in den Logic-State gespiegelt.
-static void onGatewayState(uint8_t addr, int speed, const char* dir,
+static void onGatewayState(uint8_t addr, int speed, const char *dir,
                            const bool fnStates[16])
 {
     logicSetState(addr, speed, dir, fnStates);
-    guiUpdateDynamic();   // Anzeige (Speed, Funktionen) aktualisieren
+
+    guiUpdateSpeed();
+    guiUpdateAddress();
+    guiUpdateFunctions();
 }
 
 static void onGatewayOnline(bool online)
 {
     logicSetOnline(online);
-    guiUpdateDynamic();   // Statuspunkt neu zeichnen
+    guiUpdateConnectionStatus();
 }
-
 static void onGatewayRedraw()
 {
+    guiInvalidateDynamic();
     guiUpdateDynamic();
 }
 
@@ -56,11 +60,24 @@ void setup()
     Serial.begin(115200);
 
     guiInitDisplay(); // TFT-Init + Backlight an (+ 2x Blink) MUSS vor touchBegin/logicBegin stehen (gui.h)
-    touchBegin();   // Touch-Pins (Bit-Bang) initialisieren
-    logicBegin();   // Demo-Startzustaende
-    encoderBegin(); // Drehregler initialisieren
-    guiBegin();     // Vollbild UI (TFT ist bereits via guiInitDisplay() initialisiert)
-    commBegin({ onGatewayState, onGatewayOnline, onGatewayRedraw });
+    touchBegin();     // Touch-Pins (Bit-Bang) initialisieren
+    logicBegin();     // Demo-Startzustaende
+    encoderBegin();   // Drehregler initialisieren
+  
+   if (sdCardBegin())
+    {
+        if (sdCardBegin())
+        {
+
+            sdCardList("/", 2);
+        }
+        sdCardList("/", 1);
+    }
+
+    guiBegin();       // Vollbild UI (TFT ist bereits via guiInitDisplay() initialisiert)
+
+   
+    commBegin({onGatewayState, onGatewayOnline, onGatewayRedraw});
 
     Serial.printf("ESP32 Lok-Fahrregler %s (refactored) gestartet\n", FW_VERSION);
 }
@@ -70,8 +87,56 @@ void setup()
 // ============================================================================
 void loop()
 {
-    commLoop();   // WebSocket Heartbeat + Reconnect
+    commLoop(); // WebSocket Heartbeat + Reconnect
 
+    // Temporären Adressfokus automatisch beenden.
+    if (logicUpdateEncoderFocus())
+    {
+        guiUpdateConnectionStatus();
+    }
+    // Encoder bei JEDEM loop()-Durchlauf abfragen.
+    // Nicht an das langsamere Touch-Intervall koppeln.
+    EncoderEvent encoderEvent{};
+
+    if (encoderPoll(&encoderEvent))
+    {
+        const bool changed = logicApplyEncoder(encoderEvent);
+
+        if (changed)
+        {
+            if (logicDirtySelect)
+            {
+                commSendSelectLoco(logicAddress);
+                commSendRequestState(logicAddress);
+                logicDirtySelect = false;
+            }
+
+            if (logicDirtyDrive)
+            {
+                const char *dir =
+                    logicDirection == Direction::FORWARD
+                        ? "forward"
+                        : "reverse";
+
+                if (logicEmergencyStopRequested)
+                {
+                    commSendEmergencyStop();
+                    logicEmergencyStopRequested = false;
+                }
+                else
+                {
+                    commSendDrive(
+                        logicAddress,
+                        logicTargetSpeed,
+                        dir);
+                }
+
+                logicDirtyDrive = false;
+            }
+
+            guiUpdateDynamic();
+        }
+    }
     // --- Touch-Verarbeitung ---
     // PacoMouseCYD-Prinzip: EIN Finger-Down = EINE Aktion (Edge-Detection
     // + Mittelung in touchGetTap). So kann ein gehaltener Finger (oder
@@ -81,7 +146,7 @@ void loop()
     {
         lastTouch = millis();
         int16_t px = 0, py = 0;
-        if (touchGetTap(&px, &py))   // true NUR beim Uebergang released->pressed
+        if (touchGetTap(&px, &py)) // true NUR beim Uebergang released->pressed
         {
             bool changed = logicApplyTouch(px, py);
 
@@ -96,8 +161,9 @@ void loop()
                 }
                 if (logicDirtyDrive)
                 {
-                    const char* dir = (logicDirection == Direction::FORWARD)
-                                        ? "forward" : "reverse";
+                    const char *dir = (logicDirection == Direction::FORWARD)
+                                          ? "forward"
+                                          : "reverse";
                     // STOP-Taster: emergency_stop senden (sofortiger Halt).
                     // Nur wenn der Taster explizit gedrueckt wurde — ein
                     // normales "Speed 0" ueber Slider/Gas sendet drive speed=0.
@@ -126,74 +192,6 @@ void loop()
 
             // 3) GUI: statische/dynamische Teile neu zeichnen
             guiUpdateDynamic();
-        }
-        else
-        {
-            // --- Drehregler ---
-            EncoderEvent ev;
-            if (encoderPoll(&ev))
-            {
-                const bool changed = logicApplyEncoder(ev);
-                if (changed)
-                {
-                    if (logicDirtySelect)
-                    {
-                        commSendSelectLoco(logicAddress);
-                        commSendRequestState(logicAddress);
-                        logicDirtySelect = false;
-                    }
-                    if (logicDirtyDrive)
-                    {
-                        const char* dir = (logicDirection == Direction::FORWARD)
-                                            ? "forward" : "reverse";
-
-                        if (logicEmergencyStopRequested)
-                        {
-                            commSendEmergencyStop();
-                            logicEmergencyStopRequested = false;
-                        }
-                        else
-                        {
-                            commSendDrive(logicAddress, logicTargetSpeed, dir);
-                        }
-
-                        commSendFunction(logicAddress, 0, logicLightOn);
-                        for (int i = 0; i < 16; i++)
-                            commSendFunction(logicAddress,
-                                             logicFunctions[i].functionNumber,
-                                             logicFunctions[i].active);
-                        logicDirtyDrive = false;
-                    }
-                }
-
-                guiUpdateDynamic();
-            }
-
-            // --- Encoder-Taster ---
-            {
-                bool pressed = false;
-                bool released = false;
-                bool longPress = false;
-                if (encoderPoll(&ev))
-                {
-                    if (longPress)
-                    {
-                        logicTargetSpeed = 0;
-                        logicSpeed = 0;
-                        logicEmergencyStopRequested = true;
-                        logicDirtyDrive = true;
-                        commSendEmergencyStop();
-                        logicEmergencyStopRequested = false;
-                        logicDirtyDrive = false;
-                    }
-                    else if (pressed)
-                    {
-                        encoderToggleMode();
-                    }
-
-                    guiUpdateDynamic();
-                }
-            }
         }
     }
 
@@ -229,7 +227,7 @@ void loop()
             serialLine.trim();
             if (serialLine == "calib")
             {
-                touchStartCalibration();   // 12 s Fenster, 4 Ecken antippen
+                touchStartCalibration(); // 12 s Fenster, 4 Ecken antippen
             }
             serialLine = "";
         }

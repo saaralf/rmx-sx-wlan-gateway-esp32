@@ -83,8 +83,8 @@
 #define ENC_DEBOUNCE_MS     50                 //!< Taster-Entprellung (wie PacoMouseCYD)
 #define ENC_SW_LONG_MS      500                //!< Grenze kurz vs. lang
 #define ENC_STEPS_PER_CLICK 1                  //!< Encoder-Auflösung pro Raste
-#define ENC_MIN_EVENT_MS    35                 //!< Mindestabstand zwischen Encoder-Events
-
+#define ENC_MIN_EVENT_MS    0                 //!< Mindestabstand zwischen Encoder-Events
+#define ENC_ADDRESS_FOCUS_TIMEOUT_MS 3000
 // ---- Touch-Kalibrierung (Startwerte, werden zur Laufzeit auto-kalibriert) -
 // Grobe Roh-Grenzen fuer das 2.8" CYD Panel (0..4095). Werden beim Boot
 // aus NVS geladen, falls eine manuelle "calib" durchgefuehrt wurde.
@@ -94,5 +94,14 @@
 #define TS_MIN_Y 190
 #define TS_MAX_Y 3900
 #define TS_Z_THRESHOLD 300         //!< Mindest-Druckstaerke fuer "gedrueckt"
+// ---- MicroSD-Karte des ESP32-2432S028R -----------------------------------
+// Die SD-Karte nutzt den separaten VSPI-Bus. Das TFT wird in platformio.ini
+// mit USE_HSPI_PORT auf HSPI gelegt, damit Display und SD sich nicht stoeren.
+#define SD_SCLK 18
+#define SD_MISO 19
+#define SD_MOSI 23
+#define SD_CS    5
+
+#define SD_SPI_FREQUENCY 10000000U
 
 #endif // CONFIG_H

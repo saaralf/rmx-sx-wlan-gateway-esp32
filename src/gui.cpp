@@ -11,25 +11,56 @@
 //   guiUpdateDynamic() nur aendernde Teile (Digitalanzeige, Slider, Status)
 //   guiDrawDebugTouch()/guiDrawLoopCounter() Diagnose-Leiste unten/rechts
 // ============================================================================
+#include "sdcard.h"
 
+#include <FS.h>
+#include <SD.h>
 #include "gui.h"
 #include "logic.h"
 #include "types.h"
 #include "config.h"
-#include "comm.h"   // gwVersion (Gateway-Version aus hello_ack)
+#include "comm.h" // gwVersion (Gateway-Version aus hello_ack)
 #include <Arduino.h>
 #include <TFT_eSPI.h>
 #include <SPI.h>
 
 // ---- Globales Display-Objekt ---------------------------------------------
 TFT_eSPI guiTft = TFT_eSPI();
+static bool drawBmp24(
+    const char* path,
+    int16_t x,
+    int16_t y
+);
+// ============================================================================
+// Zuletzt gezeichneter GUI-Zustand
+// ============================================================================
+
+namespace
+{
+    bool guiCacheValid = false;
+
+    int guiLastSpeed = -1;
+    int guiLastTargetSpeed = -1;
+
+    int guiLastAddress = -1;
+
+    bool guiLastOnline = false;
+    bool guiLastLightOn = false;
+
+    EncoderMode guiLastEncoderMode =
+        static_cast<EncoderMode>(255);
+
+    bool guiLastFunctions[16] = {false};
+
+    uint8_t guiLastVisibleFunctions[8] = {0};
+}
 
 // ---- Farbpalette ----------------------------------------------------------
 constexpr uint16_t COLOR_BACKGROUND = TFT_DARKGREY;
-constexpr uint16_t COLOR_PANEL      = 0x4208;
-constexpr uint16_t COLOR_BUTTON     = 0xBDF7;
-constexpr uint16_t COLOR_BLUE_LED   = 0x05FF;
-constexpr uint16_t COLOR_INACTIVE   = 0x8410;
+constexpr uint16_t COLOR_PANEL = 0x4208;
+constexpr uint16_t COLOR_BUTTON = 0xBDF7;
+constexpr uint16_t COLOR_BLUE_LED = 0x05FF;
+constexpr uint16_t COLOR_INACTIVE = 0x8410;
 
 // ============================================================================
 // Hilfsfunktionen (Zeichnen)
@@ -69,13 +100,15 @@ static void drawBeveledButton(int16_t x, int16_t y, int16_t w, int16_t h,
  * @return void
  * @note Utility fuer alle beschrifteten Elemente; nutzt guiTft.
  */
-static void drawCenteredText(const String& text, int16_t centerX, int16_t centerY,
+static void drawCenteredText(const String &text, int16_t centerX, int16_t centerY,
                              uint16_t color, uint8_t font = 2,
                              uint16_t background = TFT_TRANSPARENT)
 {
     guiTft.setTextDatum(MC_DATUM);
-    if (background == TFT_TRANSPARENT) guiTft.setTextColor(color);
-    else guiTft.setTextColor(color, background);
+    if (background == TFT_TRANSPARENT)
+        guiTft.setTextColor(color);
+    else
+        guiTft.setTextColor(color, background);
     guiTft.drawString(text, centerX, centerY, font);
 }
 
@@ -90,13 +123,15 @@ static void drawCenteredText(const String& text, int16_t centerX, int16_t center
  * @return void
  * @note Utility fuer Beschriftungen am linken Rand (Lokname, Licht).
  */
-static void drawLeftText(const String& text, int16_t x, int16_t centerY,
+static void drawLeftText(const String &text, int16_t x, int16_t centerY,
                          uint16_t color, uint8_t font = 2,
                          uint16_t background = TFT_TRANSPARENT)
 {
     guiTft.setTextDatum(ML_DATUM);
-    if (background == TFT_TRANSPARENT) guiTft.setTextColor(color);
-    else guiTft.setTextColor(color, background);
+    if (background == TFT_TRANSPARENT)
+        guiTft.setTextColor(color);
+    else
+        guiTft.setTextColor(color, background);
     guiTft.drawString(text, x, centerY, font);
 }
 
@@ -152,7 +187,7 @@ static void drawLightIcon(int16_t x, int16_t y, bool active)
  */
 static void drawStatusBar()
 {
-    const Rect& r = Layout::locomotive;
+    const Rect &r = Layout::locomotive;
     guiTft.fillCircle(r.x + r.w - 12, r.y + 19, 5,
                       logicOnline ? TFT_GREEN : TFT_RED);
 
@@ -179,7 +214,7 @@ static void drawStatusBar()
 
     // Encoder-Modusanzeige direkt neben der Gateway-Version.
     // Konvention: 0 = SPEED, 1 = ADDRESS.
-    const char* modeText = (encoderMode == EncoderMode::SPEED) ? "S" : "A";
+    const char *modeText = (encoderMode == EncoderMode::SPEED) ? "S" : "A";
     guiTft.fillRect(54, 15, 10, 9, COLOR_PANEL);
     guiTft.setTextColor(TFT_YELLOW, COLOR_PANEL);
     guiTft.drawString(modeText, 54, 15, 1);
@@ -193,21 +228,115 @@ static void drawStatusBar()
  */
 static void drawLocomotive()
 {
-    const Rect& r = Layout::locomotive;
-    guiTft.fillRoundRect(r.x, r.y, r.w, r.h, 4, COLOR_PANEL);
-    guiTft.drawRoundRect(r.x, r.y, r.w, r.h, 4, TFT_WHITE);
-    const int16_t x = r.x + 80, y = r.y + 10;
-    guiTft.fillRect(x, y, 72, 13, TFT_YELLOW);
-    guiTft.fillRect(x + 4,  y + 3, 13, 6, TFT_BLUE);
-    guiTft.fillRect(x + 21, y + 3, 13, 6, TFT_BLUE);
-    guiTft.fillRect(x + 38, y + 3, 13, 6, TFT_BLUE);
-    guiTft.fillRect(x + 55, y + 3, 13, 6, TFT_BLUE);
-    guiTft.fillRect(x, y + 13, 72, 5, TFT_BLUE);
-    guiTft.fillCircle(x + 13, y + 19, 4, TFT_BLACK);
-    guiTft.fillCircle(x + 59, y + 19, 4, TFT_BLACK);
-    guiTft.drawLine(x + 28, y, x + 36, y - 7, TFT_RED);
-    guiTft.drawLine(x + 36, y - 7, x + 44, y, TFT_RED);
-    guiTft.drawFastHLine(x + 30, y - 8, 18, TFT_RED);
+    const Rect &r = Layout::locomotive;
+
+    guiTft.fillRoundRect(
+        r.x,
+        r.y,
+        r.w,
+        r.h,
+        4,
+        COLOR_PANEL);
+
+    guiTft.drawRoundRect(
+        r.x,
+        r.y,
+        r.w,
+        r.h,
+        4,
+        TFT_WHITE);
+
+    // Das vorbereitete Bild ist 96 x 30 Pixel groß.
+    // r.x + 68 = ungefähr horizontal zentriert.
+    // r.y + 4  = vier Pixel Abstand nach oben.
+    if (
+        drawBmp24(
+            "/loks/diesel.bmp",
+            r.x + 68,
+            r.y + 4))
+    {
+        // BMP wurde erfolgreich gezeichnet.
+        // Die bisherige Lok muss nicht mehr gezeichnet werden.
+        return;
+    }
+
+    // Fallback: bisherige, programmatisch gezeichnete Lok.
+    const int16_t x = r.x + 80;
+    const int16_t y = r.y + 10;
+
+    guiTft.fillRect(
+        x,
+        y,
+        72,
+        13,
+        TFT_YELLOW);
+
+    guiTft.fillRect(
+        x + 4,
+        y + 3,
+        13,
+        6,
+        TFT_BLUE);
+
+    guiTft.fillRect(
+        x + 21,
+        y + 3,
+        13,
+        6,
+        TFT_BLUE);
+
+    guiTft.fillRect(
+        x + 38,
+        y + 3,
+        13,
+        6,
+        TFT_BLUE);
+
+    guiTft.fillRect(
+        x + 55,
+        y + 3,
+        13,
+        6,
+        TFT_BLUE);
+
+    guiTft.fillRect(
+        x,
+        y + 13,
+        72,
+        5,
+        TFT_BLUE);
+
+    guiTft.fillCircle(
+        x + 13,
+        y + 19,
+        4,
+        TFT_BLACK);
+
+    guiTft.fillCircle(
+        x + 59,
+        y + 19,
+        4,
+        TFT_BLACK);
+
+    guiTft.drawLine(
+        x + 28,
+        y,
+        x + 36,
+        y - 7,
+        TFT_RED);
+
+    guiTft.drawLine(
+        x + 36,
+        y - 7,
+        x + 44,
+        y,
+        TFT_RED);
+
+    guiTft.drawFastHLine(
+        x + 30,
+        y - 8,
+        18,
+        TFT_RED);
 }
 
 /**
@@ -219,13 +348,13 @@ static void drawLocomotive()
  */
 static void drawLocName()
 {
-    const Rect& nameRect = Layout::locomotiveName;
-    const Rect& dropRect = Layout::locomotiveDropDown;
+    const Rect &nameRect = Layout::locomotiveName;
+    const Rect &dropRect = Layout::locomotiveDropDown;
     drawBeveledButton(nameRect.x, nameRect.y, nameRect.w, nameRect.h, TFT_WHITE);
     drawLeftText("Lok " + String(logicAddress), nameRect.x + 7, nameRect.y + nameRect.h / 2,
                  TFT_BLACK, 4, TFT_WHITE);
     drawBeveledButton(dropRect.x, dropRect.y, dropRect.w, dropRect.h, COLOR_BUTTON);
-    guiTft.fillTriangle(dropRect.x + 7,  dropRect.y + 11,
+    guiTft.fillTriangle(dropRect.x + 7, dropRect.y + 11,
                         dropRect.x + 20, dropRect.y + 11,
                         dropRect.x + 13, dropRect.y + 20, TFT_BLACK);
 }
@@ -238,7 +367,7 @@ static void drawLocName()
  */
 static void drawLightButton()
 {
-    const Rect& r = Layout::lightButton;
+    const Rect &r = Layout::lightButton;
     const uint16_t buttonColor = logicLightOn ? TFT_YELLOW : COLOR_BUTTON;
     drawBeveledButton(r.x, r.y, r.w, r.h, buttonColor, logicLightOn);
     drawLightIcon(r.x + 17, r.y + r.h / 2, logicLightOn);
@@ -253,13 +382,13 @@ static void drawLightButton()
  */
 static void drawAddressSelector()
 {
-    const Rect& r = Layout::addressSelector;
+    const Rect &r = Layout::addressSelector;
     drawBeveledButton(r.x, r.y, r.w, r.h, TFT_WHITE);
     drawCenteredText(String(logicAddress), r.x + 24, r.y + r.h / 2,
                      TFT_BLACK, 2, TFT_WHITE);
     const int16_t sepX = r.x + r.w - 18;
     guiTft.drawFastVLine(sepX, r.y + 2, r.h - 4, TFT_DARKGREY);
-    guiTft.fillTriangle(sepX + 9, r.y + 5,  sepX + 4, r.y + 12, sepX + 14, r.y + 12, TFT_BLACK);
+    guiTft.fillTriangle(sepX + 9, r.y + 5, sepX + 4, r.y + 12, sepX + 14, r.y + 12, TFT_BLACK);
     guiTft.fillTriangle(sepX + 9, r.y + r.h - 5, sepX + 4, r.y + r.h - 12,
                         sepX + 14, r.y + r.h - 12, TFT_BLACK);
 }
@@ -272,7 +401,7 @@ static void drawAddressSelector()
  */
 static void drawDigitalDisplay()
 {
-    const Rect& r = Layout::speedDisplay;
+    const Rect &r = Layout::speedDisplay;
     guiTft.fillRoundRect(r.x, r.y, r.w, r.h, 4, TFT_NAVY);
     guiTft.drawRoundRect(r.x, r.y, r.w, r.h, 4, TFT_BLACK);
     char buf[4];
@@ -289,7 +418,7 @@ static void drawDigitalDisplay()
  *       aufgerufen. Liest f.active fuer Highlight.
  */
 static void drawFunctionButton(int16_t x, int16_t y, int16_t w, int16_t h,
-                               FunctionConfig& f)
+                               FunctionConfig &f)
 {
     const uint16_t bc = f.active ? TFT_YELLOW : COLOR_BUTTON;
     drawBeveledButton(x, y, w, h, bc, f.active);
@@ -328,8 +457,8 @@ static void drawFunctionColumns()
  */
 static void drawThrottle()
 {
-    const Rect& slider = Layout::throttle;
-    const Rect& gauge  = Layout::speedGauge;
+    const Rect &slider = Layout::throttle;
+    const Rect &gauge = Layout::speedGauge;
 
     guiTft.fillRoundRect(slider.x, slider.y, slider.w, slider.h, 5, TFT_BLACK);
     guiTft.drawRoundRect(slider.x, slider.y, slider.w, slider.h, 5, TFT_WHITE);
@@ -350,7 +479,8 @@ static void drawThrottle()
     guiTft.drawRoundRect(gauge.x, gauge.y, gauge.w, gauge.h, 5, TFT_WHITE);
     int16_t it = gauge.y + 6, ib = gauge.y + gauge.h - 6, ih = ib - it;
     int16_t fh = map(logicSpeed, 0, 99, 0, ih);
-    if (fh > 0) guiTft.fillRect(gauge.x + 6, ib - fh, gauge.w - 12, fh, TFT_YELLOW);
+    if (fh > 0)
+        guiTft.fillRect(gauge.x + 6, ib - fh, gauge.w - 12, fh, TFT_YELLOW);
     for (int i = 1; i <= 9; i++)
     {
         int16_t segY = it + i * ih / 10;
@@ -366,10 +496,10 @@ static void drawThrottle()
  */
 static void drawBottomControls()
 {
-    const Rect& gas  = Layout::accelerateButton;
-    const Rect& back = Layout::reverseButton;
-    const Rect& front= Layout::forwardButton;
-    const Rect& stop = Layout::emergencyButton;
+    const Rect &gas = Layout::accelerateButton;
+    const Rect &back = Layout::reverseButton;
+    const Rect &front = Layout::forwardButton;
+    const Rect &stop = Layout::emergencyButton;
 
     drawBeveledButton(gas.x, gas.y, gas.w, gas.h, COLOR_BUTTON);
     guiTft.fillTriangle(gas.x + gas.w / 2, gas.y + 6,
@@ -393,6 +523,58 @@ static void drawBottomControls()
 }
 
 // ============================================================================
+// haveFunctionsChanged
+// Hat sich Licht F0 geändert?
+// Hat sich F1 bis F16 geändert?
+// Hat sich geändert, welche acht Funktionen sichtbar sind?
+// ============================================================================
+static bool haveFunctionsChanged()
+{
+    if (!guiCacheValid)
+    {
+        return true;
+    }
+
+    if (logicLightOn != guiLastLightOn)
+    {
+        return true;
+    }
+
+    for (int i = 0; i < 16; i++)
+    {
+        if (logicFunctions[i].active != guiLastFunctions[i])
+        {
+            return true;
+        }
+    }
+
+    for (int i = 0; i < 8; i++)
+    {
+        if (logicVisibleFunctions[i] != guiLastVisibleFunctions[i])
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+static void rememberFunctions()
+{
+    guiLastLightOn = logicLightOn;
+
+    for (int i = 0; i < 16; i++)
+    {
+        guiLastFunctions[i] = logicFunctions[i].active;
+    }
+
+    for (int i = 0; i < 8; i++)
+    {
+        guiLastVisibleFunctions[i] = logicVisibleFunctions[i];
+    }
+}
+
+// ============================================================================
 // Oeffentliche GUI-API
 // ============================================================================
 
@@ -409,15 +591,17 @@ void guiInitDisplay()
     // 2x blinken = "setup erreicht, VOR TFT-init" (Signal fuer weissen Schirm)
     for (int i = 0; i < 2; i++)
     {
-        digitalWrite(TFT_BL, LOW);  delay(150);
-        digitalWrite(TFT_BL, HIGH); delay(150);
+        digitalWrite(TFT_BL, LOW);
+        delay(150);
+        digitalWrite(TFT_BL, HIGH);
+        delay(150);
     }
-    guiTft.init();          // <-- hier haengt es ggf. (weisser Schirm)
-    guiTft.setRotation(0);   // senkrechtes Layout (240x320)
+    guiTft.init();         // <-- hier haengt es ggf. (weisser Schirm)
+    guiTft.setRotation(0); // senkrechtes Layout (240x320)
     guiBootPhase(TFT_RED, "BOOT");
 }
 
-void guiBootPhase(uint16_t color, const char* msg)
+void guiBootPhase(uint16_t color, const char *msg)
 {
     guiTft.fillScreen(color);
     guiTft.setTextDatum(MC_DATUM);
@@ -463,6 +647,121 @@ void guiDrawScreen()
     guiTft.setTextDatum(TL_DATUM);
     guiTft.setTextColor(TFT_WHITE, COLOR_PANEL);
     guiTft.drawString(FW_VERSION, 6, 6, 1);
+    guiLastSpeed = logicSpeed;
+    guiLastTargetSpeed = logicTargetSpeed;
+    guiLastAddress = logicAddress;
+    guiLastOnline = logicOnline;
+    guiLastEncoderMode = encoderMode;
+
+    rememberFunctions();
+
+    guiCacheValid = true;
+}
+
+//===========================================================
+// Wichtig: Diese Version zeichnet Slider und Balken nur neu, wenn sich logicSpeed oder logicTargetSpeed tatsächlich geändert haben.
+//
+// Die bestehende Zeichenfunktion drawThrottle() baut Slider und Gauge derzeit weiterhin komplett neu auf.
+// Das ist zunächst in Ordnung. Entscheidend ist, dass sie nicht mehr bei unveränderten Werten aufgerufen wird.
+// Der bisherige große Löschbereich war in guiUpdateDynamic() enthalten.
+//===========================================================
+void guiUpdateSpeed()
+{
+    const bool speedChanged =
+        !guiCacheValid ||
+        logicSpeed != guiLastSpeed ||
+        logicTargetSpeed != guiLastTargetSpeed;
+
+    if (!speedChanged)
+    {
+        return;
+    }
+
+    const Rect &slider = Layout::throttle;
+    const Rect &gauge = Layout::speedGauge;
+
+    // Nur Slider und Gauge löschen.
+    // Die digitale Anzeige löscht ihren eigenen Bereich selbst.
+    guiTft.fillRect(
+        slider.x - 3,
+        slider.y - 3,
+        (gauge.x + gauge.w) - (slider.x - 3) + 3,
+        slider.h + 6,
+        COLOR_BACKGROUND);
+
+    drawDigitalDisplay();
+    drawThrottle();
+
+    guiLastSpeed = logicSpeed;
+    guiLastTargetSpeed = logicTargetSpeed;
+}
+// Damit werden Lokname und Adressfeld nur bei einer echten Adressänderung neu gezeichnet.
+void guiUpdateAddress()
+{
+    const bool addressChanged =
+        !guiCacheValid ||
+        logicAddress != guiLastAddress;
+
+    if (!addressChanged)
+    {
+        return;
+    }
+
+    drawLocName();
+    drawAddressSelector();
+
+    guiLastAddress = logicAddress;
+}
+
+// Damit zeichnet eine Geschwindigkeitsänderung nicht mehr automatisch alle acht Funktionstasten neu.
+//
+// Im aktuellen Code ruft guiUpdateDynamic() nach jedem dynamischen Update sowohl drawLightButton() als auch drawFunctionColumns() auf.
+
+void guiUpdateFunctions()
+{
+    if (!haveFunctionsChanged())
+    {
+        return;
+    }
+
+    drawLightButton();
+    drawFunctionColumns();
+
+    rememberFunctions();
+}
+
+//======================================================
+// Damit wird die kleine Statusanzeige nur geändert, wenn:
+
+// der Online-Zustand wechselt oder
+// der Encoder-Modus wechselt.
+// Besonderheit Gateway-Version
+
+// Die Gateway-Version gwVersion ist hier noch nicht im Cache enthalten.
+// Sie kommt vermutlich nur einmal nach hello_ack.
+// Deshalb lösen wir diese später gezielt über guiInvalidateDynamic() oder einen direkten Status-Refresh aus.
+//======================================================
+void guiUpdateConnectionStatus()
+{
+    const bool statusChanged =
+        !guiCacheValid ||
+        logicOnline != guiLastOnline ||
+        encoderMode != guiLastEncoderMode;
+
+    if (!statusChanged)
+    {
+        return;
+    }
+
+    drawStatusBar();
+
+    guiLastOnline = logicOnline;
+    guiLastEncoderMode = encoderMode;
+}
+// Diese Funktion wird benötigt, wenn Inhalte neu gezeichnet werden müssen, obwohl sich die Logic-Variablen nicht geändert haben – beispielsweise nach Empfang der Gateway-Version.
+void guiInvalidateDynamic()
+{
+    guiCacheValid = false;
 }
 
 /**
@@ -476,33 +775,13 @@ void guiDrawScreen()
  */
 void guiUpdateDynamic()
 {
-    constexpr uint32_t kMinDynamicMs = 100;
-    static uint32_t lastDynamicMs = 0;
-    const uint32_t now = millis();
-    if (now - lastDynamicMs < kMinDynamicMs)
-    {
-        return;
-    }
-    lastDynamicMs = now;
+    guiUpdateSpeed();
+    guiUpdateAddress();
+    guiUpdateFunctions();
+    guiUpdateConnectionStatus();
 
-    const Rect& slider = Layout::throttle;
-    const Rect& gauge  = Layout::speedGauge;
-    // Bereich um Slider + Gauge loeschen
-    guiTft.fillRect(slider.x - 3, slider.y - 3,
-                    (gauge.x + gauge.w) - (slider.x - 3) + 3,
-                    (slider.y + slider.h) - (slider.y - 3) + 3,
-                    COLOR_BACKGROUND);
-
-    drawDigitalDisplay();
-    drawThrottle();
-    // Licht-Button + Funktionen koennen sich aendern -> zuerst neu zeichnen,
-    // DANN die Statusleiste (GW-Version + Statuspunkt) als LETZTES, damit
-    // nichts die Ecke (6,15) / (rechts) uebermalt.
-    drawLightButton();
-    drawFunctionColumns();
-    drawStatusBar();
+    guiCacheValid = true;
 }
-
 /**
  * @brief Zeigt die Touch-Diagnose-Leiste unten am Bildschirm an.
  * @param touched  true wenn aktuell gedrueckt
@@ -513,7 +792,7 @@ void guiUpdateDynamic()
  *       den alten Green-Bug: kein fillScreen mehr, nur Textzeile).
  */
 void guiDrawDebugTouch(bool touched, int16_t rx, int16_t ry,
-                      int16_t mx, int16_t my)
+                       int16_t mx, int16_t my)
 {
     guiTft.fillRect(0, 305, 240, 12, TFT_BLACK);
     guiTft.setTextDatum(TL_DATUM);
@@ -549,8 +828,232 @@ void guiDrawLoopCounter(uint32_t n)
  */
 void touchDrawCalibCross(int16_t x, int16_t y, uint16_t color)
 {
-    const int16_t len = 10;   // halbe Kreuz-Arm-Laenge
+    const int16_t len = 10; // halbe Kreuz-Arm-Laenge
     guiTft.drawFastHLine(x - len, y, 2 * len, color);
     guiTft.drawFastVLine(x, y - len, 2 * len, color);
     guiTft.drawCircle(x, y, 12, color);
+}
+
+static uint16_t readBmp16(File &file)
+{
+    uint16_t value = file.read();
+
+    value |=
+        static_cast<uint16_t>(file.read()) << 8;
+
+    return value;
+}
+
+static uint32_t readBmp32(File &file)
+{
+    uint32_t value = file.read();
+
+    value |=
+        static_cast<uint32_t>(file.read()) << 8;
+
+    value |=
+        static_cast<uint32_t>(file.read()) << 16;
+
+    value |=
+        static_cast<uint32_t>(file.read()) << 24;
+
+    return value;
+}
+
+/**
+ * Zeichnet ein unkomprimiertes 24-Bit-BMP von der SD-Karte.
+ *
+ * Voraussetzungen:
+ * - 24 Bit Farbtiefe
+ * - keine Kompression
+ * - Bild ist bereits auf die passende Größe skaliert
+ */
+static bool drawBmp24(
+    const char *path,
+    int16_t x,
+    int16_t y)
+{
+    if (!sdCardReady())
+    {
+        return false;
+    }
+
+    File bmp = SD.open(path, FILE_READ);
+
+    if (!bmp)
+    {
+        Serial.printf(
+            "[GUI] BMP nicht gefunden: %s\n",
+            path);
+
+        return false;
+    }
+
+    // BMP-Signatur muss "BM" beziehungsweise 0x4D42 sein.
+    if (readBmp16(bmp) != 0x4D42)
+    {
+        Serial.printf(
+            "[GUI] Keine BMP-Datei: %s\n",
+            path);
+
+        bmp.close();
+        return false;
+    }
+
+    // Dateigröße und reservierte Bytes werden nicht benötigt.
+    (void)readBmp32(bmp);
+    (void)readBmp32(bmp);
+
+    const uint32_t pixelOffset =
+        readBmp32(bmp);
+
+    const uint32_t dibSize =
+        readBmp32(bmp);
+
+    const int32_t width =
+        static_cast<int32_t>(readBmp32(bmp));
+
+    const int32_t heightRaw =
+        static_cast<int32_t>(readBmp32(bmp));
+
+    const uint16_t planes =
+        readBmp16(bmp);
+
+    const uint16_t depth =
+        readBmp16(bmp);
+
+    const uint32_t compression =
+        readBmp32(bmp);
+
+    // Nur normales 24-Bit-BMP ohne Kompression unterstützen.
+    if (
+        dibSize < 40 ||
+        width <= 0 ||
+        heightRaw == 0 ||
+        planes != 1 ||
+        depth != 24 ||
+        compression != 0)
+    {
+        Serial.printf(
+            "[GUI] BMP-Format nicht unterstützt: %s\n",
+            path);
+
+        bmp.close();
+        return false;
+    }
+
+    const bool bottomUp =
+        heightRaw > 0;
+
+    const int32_t height =
+        bottomUp
+            ? heightRaw
+            : -heightRaw;
+
+    // Jede BMP-Zeile wird auf ein Vielfaches von vier Bytes aufgefüllt.
+    const uint32_t rowSize =
+        (static_cast<uint32_t>(width) * 3U + 3U) & ~3U;
+
+    // Sicherheitsprüfung für den Kopfbereich.
+    if (
+        width > Layout::locomotive.w - 4 ||
+        height > Layout::locomotive.h - 4)
+    {
+        Serial.printf(
+            "[GUI] BMP zu groß: %ldx%ld\n",
+            static_cast<long>(width),
+            static_cast<long>(height));
+
+        bmp.close();
+        return false;
+    }
+
+    // Unser Übungsbild ist 96 Pixel breit.
+    // 100 Pixel Reserve reichen für diesen Loader.
+    uint8_t rowBuffer[3 * 100 + 4];
+
+    if (rowSize > sizeof(rowBuffer))
+    {
+        Serial.println(
+            "[GUI] BMP-Zeile ist größer als der Puffer");
+
+        bmp.close();
+        return false;
+    }
+
+    // Bildbereich im Display festlegen.
+    guiTft.startWrite();
+
+    guiTft.setAddrWindow(
+        x,
+        y,
+        width,
+        height);
+
+    for (int32_t screenRow = 0;
+         screenRow < height;
+         screenRow++)
+    {
+        const int32_t sourceRow =
+            bottomUp
+                ? height - 1 - screenRow
+                : screenRow;
+
+        const uint32_t rowPosition =
+            pixelOffset +
+            static_cast<uint32_t>(sourceRow) * rowSize;
+
+        bmp.seek(rowPosition);
+
+        const size_t bytesRead =
+            bmp.read(
+                rowBuffer,
+                rowSize);
+
+        if (bytesRead != rowSize)
+        {
+            Serial.printf(
+                "[GUI] BMP-Lesefehler in Zeile %ld\n",
+                static_cast<long>(screenRow));
+
+            guiTft.endWrite();
+            bmp.close();
+
+            return false;
+        }
+
+        for (int32_t column = 0;
+             column < width;
+             column++)
+        {
+            // BMP speichert 24-Bit-Pixel als Blau, Grün, Rot.
+            const uint8_t blue =
+                rowBuffer[column * 3 + 0];
+
+            const uint8_t green =
+                rowBuffer[column * 3 + 1];
+
+            const uint8_t red =
+                rowBuffer[column * 3 + 2];
+
+            const uint16_t color565 =
+                guiTft.color565(
+                    red,
+                    green,
+                    blue);
+
+            guiTft.pushColor(color565);
+        }
+    }
+
+    guiTft.endWrite();
+    bmp.close();
+
+    Serial.printf(
+        "[GUI] BMP geladen: %s (%ldx%ld)\n",
+        path,
+        static_cast<long>(width),
+        static_cast<long>(height));
+
+    return true;
 }

@@ -33,41 +33,41 @@ extern TFT_eSPI guiTft;
 // ============================================================================
 namespace Layout
 {
-    constexpr int16_t screenWidth  = 240;
+    constexpr int16_t screenWidth = 240;
     constexpr int16_t screenHeight = 320;
 
     constexpr int16_t margin = 4;
-    constexpr int16_t gap    = 4;
+    constexpr int16_t gap = 4;
 
-    constexpr Rect locomotive        = { 4, 4, 232, 38 };
-    constexpr Rect locomotiveName    = { 4, 46, 202, 30 };
-    constexpr Rect locomotiveDropDown= { 209, 46, 27, 30 };
+    constexpr Rect locomotive = {4, 4, 232, 38};
+    constexpr Rect locomotiveName = {4, 46, 202, 30};
+    constexpr Rect locomotiveDropDown = {209, 46, 27, 30};
 
     constexpr int16_t sideButtonW = 64;
     constexpr int16_t sideButtonH = 32;
 
-    constexpr int16_t leftColumnX  = 4;
+    constexpr int16_t leftColumnX = 4;
     constexpr int16_t rightColumnX = 172;
 
-    constexpr Rect lightButton     = { leftColumnX, 80, sideButtonW, sideButtonH };
-    constexpr Rect addressSelector = { rightColumnX, 80, sideButtonW, sideButtonH };
-    constexpr Rect speedDisplay    = { 72, 80, 96, 32 };
+    constexpr Rect lightButton = {leftColumnX, 80, sideButtonW, sideButtonH};
+    constexpr Rect addressSelector = {rightColumnX, 80, sideButtonW, sideButtonH};
+    constexpr Rect speedDisplay = {72, 80, 96, 32};
 
-    constexpr int16_t functionStartY   = 120;
-    constexpr int16_t functionButtonW  = sideButtonW;
-    constexpr int16_t functionButtonH  = sideButtonH;
-    constexpr int16_t functionGap      = 4;
+    constexpr int16_t functionStartY = 120;
+    constexpr int16_t functionButtonW = sideButtonW;
+    constexpr int16_t functionButtonH = sideButtonH;
+    constexpr int16_t functionGap = 4;
 
-    constexpr int16_t functionLeftX  = leftColumnX;
+    constexpr int16_t functionLeftX = leftColumnX;
     constexpr int16_t functionRightX = rightColumnX;
 
-    constexpr Rect throttle   = { 76, 120, 38, 140 };
-    constexpr Rect speedGauge = { 126, 120, 38, 140 };
+    constexpr Rect throttle = {76, 120, 38, 140};
+    constexpr Rect speedGauge = {126, 120, 38, 140};
 
-    constexpr Rect accelerateButton = { 4,   268, 55, 48 };
-    constexpr Rect reverseButton    = { 63,  268, 55, 48 };
-    constexpr Rect forwardButton    = { 122, 268, 55, 48 };
-    constexpr Rect emergencyButton  = { 181, 268, 55, 48 };
+    constexpr Rect accelerateButton = {4, 268, 55, 48};
+    constexpr Rect reverseButton = {63, 268, 55, 48};
+    constexpr Rect forwardButton = {122, 268, 55, 48};
+    constexpr Rect emergencyButton = {181, 268, 55, 48};
 }
 
 // ============================================================================
@@ -102,7 +102,7 @@ void guiInitDisplay();
  * @return void
  * @note Setzt ein bereits initialisiertes TFT voraus (guiInitDisplay()).
  */
-void guiBootPhase(uint16_t color, const char* msg);
+void guiBootPhase(uint16_t color, const char *msg);
 
 /**
  * @brief Setzt die Display-Rotation (0=hoch, 1=waagerecht, 2, 3).
@@ -128,6 +128,36 @@ void guiDrawScreen();
  */
 void guiUpdateDynamic();
 
+// Umbaue GUI verbessern: MKL
+/**
+ * Aktualisiert Geschwindigkeit, Zielgeschwindigkeit,
+ * Slider und Ist-Geschwindigkeitsbalken.
+ */
+void guiUpdateSpeed();
+
+/**
+ * Aktualisiert Adresse und Loknamenanzeige.
+ */
+void guiUpdateAddress();
+
+/**
+ * Aktualisiert Licht und Funktionstasten.
+ */
+void guiUpdateFunctions();
+
+/**
+ * Aktualisiert Online-Status, Gateway-Version
+ * und Encoder-Modusanzeige.
+ */
+void guiUpdateConnectionStatus();
+
+/**
+ * Erzwingt beim nächsten Update ein vollständiges
+ * Neuzeichnen aller dynamischen Bereiche.
+ */
+void guiInvalidateDynamic();
+
+// Umbaue GUI verbessern: MKL
 /**
  * @brief Zeigt die Touch-Diagnose-Leiste unten am Bildschirm an.
  * @param touched  true wenn aktuell gedrueckt
@@ -145,7 +175,7 @@ void guiUpdateDynamic();
 void guiDrawEncoderMode(uint8_t mode);
 
 void guiDrawDebugTouch(bool touched, int16_t rx, int16_t ry,
-                      int16_t mx, int16_t my);
+                       int16_t mx, int16_t my);
 
 /**
  * @brief Zeigt den Loop-Zaehler oben rechts an (Laufzeit-Diagnose).
@@ -163,5 +193,7 @@ void guiDrawLoopCounter(uint32_t n);
  * @note Wird von touch.cpp (Kalib-Modus) per extern-Callback gerufen.
  */
 void touchDrawCalibCross(int16_t x, int16_t y, uint16_t color);
+
+
 
 #endif // GUI_H

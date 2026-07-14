@@ -41,7 +41,12 @@ extern FunctionConfig logicFunctions[16];
 extern bool logicDirtyDrive;        //!< Geschwindigkeit/Richtung aenderung offen
 extern bool logicDirtySelect;       //!< Lokwechsel offen
 extern bool logicEmergencyStopRequested;  //!< STOP-Taster: emergency_stop senden
-
+/**
+ * Prüft, ob der temporäre Adressmodus abgelaufen ist.
+ *
+ * @return true, wenn automatisch auf SPEED zurückgeschaltet wurde.
+ */
+bool logicUpdateEncoderFocus();
 /**
  * @brief Wendet ein Encoder-Ereignis auf den Fahrregler-State an.
  *

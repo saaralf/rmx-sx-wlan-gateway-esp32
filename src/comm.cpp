@@ -168,7 +168,6 @@ static void webSocketEvent(WStype_t type, uint8_t* payload, size_t length)
                         fns[i] = fobj[String(i + 1)] | false;
                 }
                 if (gCb.onState) gCb.onState(addr, spd, dir, fns);
-                if (strcmp(t, "loco_status") == 0 && gCb.onRedraw) gCb.onRedraw();
             }
             else if (strcmp(t, "hello_ack") == 0)
             {
