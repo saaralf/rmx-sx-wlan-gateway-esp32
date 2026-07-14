@@ -28,6 +28,7 @@
 #include "comm.h"
 #include "gui.h"
 #include "sdcard.h"
+#include "locomotives.h"
 
 // ---- Verdrahtung: Comm -> Logic ------------------------------------------
 // Wird vom Gateway gemeldeter Lok-Status in den Logic-State gespiegelt.
@@ -63,20 +64,18 @@ void setup()
     touchBegin();     // Touch-Pins (Bit-Bang) initialisieren
     logicBegin();     // Demo-Startzustaende
     encoderBegin();   // Drehregler initialisieren
-  
-   if (sdCardBegin())
+
+    if (sdCardBegin())
     {
-        if (sdCardBegin())
+        sdCardList("/", 2);
+
+        if (locomotivesBegin())
         {
-
-            sdCardList("/", 2);
+            locomotivesPrintAll();
         }
-        sdCardList("/", 1);
     }
+    guiBegin(); // Vollbild UI (TFT ist bereits via guiInitDisplay() initialisiert)
 
-    guiBegin();       // Vollbild UI (TFT ist bereits via guiInitDisplay() initialisiert)
-
-   
     commBegin({onGatewayState, onGatewayOnline, onGatewayRedraw});
 
     Serial.printf("ESP32 Lok-Fahrregler %s (refactored) gestartet\n", FW_VERSION);
