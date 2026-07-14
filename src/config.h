@@ -33,7 +33,7 @@
 // ---- Firmware-Version ------------------------------------------------------
 // Wird oben links auf dem Display gedruckt und sollte vor jedem funktionalen
 // Firmware-Test gebumppt werden (Vorgabe im Projekt).
-#define FW_VERSION "v0.2.24"
+#define FW_VERSION "v0.2.25"
 
 // ---- Gateway-Verbindung (ueberschreibbar via platformio.ini build_flags) ---
 #ifndef GW_HOST

@@ -8,10 +8,109 @@ Versionierung: [SemVer](https://semver.org/).
 Jede Version trägt ein Git-Tag (`vX.Y.Z`) und verweist auf Branch/Commit, damit
 FW_VERSION, Tag und Log jederzeit nachvollziehbar sind.
 
----
+## [v0.2.25] - 2026-07-14
 
-<<<<<<< HEAD
-=======
+### Hinzugefuegt (SD-Karte und Lokbild aus BMP-Datei)
+
+* **MicroSD-Unterstuetzung fuer das CYD 2432S028R eingebaut.**
+* **`src/sdcard.h/.cpp`:** Neues Modul fuer:
+
+  * Initialisierung einer FAT/FAT32-SD-Karte
+  * Erkennung des Kartentyps
+  * Ausgabe von Kartengroesse, belegtem und freiem Speicher
+  * rekursive Auflistung von Dateien und Verzeichnissen
+  * zentrale Statusabfrage ueber `sdCardReady()`
+* **SD-Pinbelegung:**
+
+  * SCLK = IO18
+  * MISO = IO19
+  * MOSI = IO23
+  * CS = IO5
+* **`platformio.ini`:** TFT_eSPI mit `USE_HSPI_PORT=1` auf HSPI gelegt.
+  Die SD-Karte verwendet separat VSPI, damit Display und SD-Karte sich
+  nicht gegenseitig umkonfigurieren.
+* **`src/gui.cpp`:** Loader fuer unkomprimierte 24-Bit-BMP-Dateien ergaenzt.
+
+  * BMP-Header und Format werden geprueft.
+  * RGB888-Pixel werden beim Zeichnen nach RGB565 konvertiert.
+  * BMP-Zeilenpadding und Bottom-up-Bildreihenfolge werden beruecksichtigt.
+  * Bild wird zeilenweise direkt von der SD-Karte auf das TFT uebertragen.
+* Lokbild wird aus folgender Datei geladen:
+  `/loks/diesel.bmp`
+* Erwartetes Uebungsformat des Lokbildes:
+
+  * 96 x 30 Pixel
+  * 24 Bit RGB
+  * unkomprimiertes BMP
+* Falls SD-Karte oder BMP-Datei fehlen, wird weiterhin automatisch die bisherige
+  programmatisch gezeichnete gelb-blaue Lok als Fallback angezeigt.
+* SD-Kartenfehler blockieren den Fahrregler nicht; Display, Encoder, WLAN und
+  Gateway-Kommunikation koennen ohne SD-Karte weiterlaufen.
+
+### Geaendert (GUI-Aktualisierung und Encoder-Steuerung)
+
+* **GUI-Aktualisierung auf einzelne Bereiche aufgeteilt**, damit nicht mehr bei
+  jeder Statusaenderung der komplette dynamische Bildschirmbereich geloescht
+  und neu gezeichnet wird.
+* Geschwindigkeitsregler, Statusanzeige, Funktionstasten und Adressbereich
+  werden nur noch aktualisiert, wenn sich der jeweilige Wert geaendert hat.
+* Doppelte beziehungsweise unnoetige GUI-Neuzeichnungen nach empfangenen
+  Gateway-Statusmeldungen reduziert.
+* Encoder-Polling aus dem langsameren Touch-Zeitfenster herausgeloest.
+  Der Encoder wird jetzt unabhaengig und regelmaessiger in der Hauptschleife
+  abgefragt.
+* Ein Rastschritt des Encoders entspricht einem Geschwindigkeitswert.
+* Lokale Geschwindigkeitsaenderungen werden fuer eine kurze Zeit gegen
+  verzoegerte Gateway-Rueckmeldungen geschuetzt.
+  Dadurch springt der Sollwert nicht mehr auf einen alten Wert zurueck.
+
+### Behoben (Encoder-Rueckspruenge und unbeabsichtigte Lokauswahl)
+
+* Zeitbasierter Encoder-Rate-Limiter entfernt, weil dadurch schnelle
+  Quadraturwechsel verloren gingen.
+* Quadraturauswertung verwendet einen Phasenakkumulator und wertet erst einen
+  vollstaendigen Rastschritt als Bewegung.
+* Rueckwaertsspruenge beziehungsweise ungleichmaessige Bewegungen des
+  Geschwindigkeitsreglers reduziert.
+* **Standardfokus des Encoders ist jetzt immer SPEED.**
+* Adress- beziehungsweise Lokauswahl per Encoder wird nur aktiviert, nachdem
+  das entsprechende Auswahlfeld auf dem Touchscreen beruehrt wurde.
+* Adressfokus wird nach einer kurzen Inaktivitaet automatisch beendet.
+  Danach steuert der Encoder wieder die Geschwindigkeit.
+* Kurzer Druck auf den Encoder-Taster wechselt nicht mehr unbeabsichtigt
+  zwischen Geschwindigkeits- und Adressmodus.
+* Interner Encodermodus und sichtbare Modusanzeige werden synchron gehalten.
+* Hinweis zur Hardware: Der Encoder-Taster wurde bereits auf IO4 verschoben,
+  da IO35 beim klassischen ESP32 keinen internen Pull-up besitzt.
+
+### Technik / Verifikation
+
+* SD-Karte muss FAT oder FAT32 formatiert sein.
+
+* Erwartete Dateistruktur:
+
+  ```
+  /
+  └── loks
+      └── diesel.bmp
+  ```
+
+* Serielle Diagnoseausgaben fuer SD-Initialisierung, Verzeichnisinhalt,
+  fehlende Dateien und nicht unterstuetzte BMP-Formate ergaenzt.
+
+* BMP-Hilfsfunktionen bleiben intern in `src/gui.cpp` und werden nicht in
+  `gui.h` exportiert.
+
+* SD-Karte wird vor `guiBegin()` initialisiert, damit das Lokbild bereits beim
+  ersten vollstaendigen Bildschirmaufbau verfuegbar ist.
+
+* Hardwaretest mit mehreren SD-Karten und laengerem Parallelbetrieb von
+  TFT, Encoder, WLAN und Gateway-Kommunikation steht noch aus.
+
+* **FW_VERSION:** v0.2.24 -> v0.2.25.
+
+
+
 ## [v0.2.24] - 2026-07-13
 ### Behoben (Encoder-SW-Pin)
 - **ENC_SW von IO35 auf IO4 geaendert**, weil IO35 auf dem CYD als
@@ -33,7 +132,6 @@ FW_VERSION, Tag und Log jederzeit nachvollziehbar sind.
 - **SW-Lang:** sendet **nur** `emergency_stop`; keine Blockade der GUI/Loop.
 - API auf Rotation (`encoderPollSteps()`) und Taster (`encoderPollSw()`) getrennt.
 
->>>>>>> 621b8f0 (fix: move encoder SW from IO35 to IO4 (v0.2.24))
 ## [v0.2.21] - 2026-07-13
 ### Behoben (Encoder-Prellen, Ruecksprünge, Modus nicht sichtbar)
 - **`src/encoder.cpp`:** Rate-Limiter `ENC_MIN_EVENT_MS=35` + saubere
