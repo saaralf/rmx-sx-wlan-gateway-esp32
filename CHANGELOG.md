@@ -8,6 +8,97 @@ Versionierung: [SemVer](https://semver.org/).
 Jede Version trägt ein Git-Tag (`vX.Y.Z`) und verweist auf Branch/Commit, damit
 FW_VERSION, Tag und Log jederzeit nachvollziehbar sind.
 
+## [v0.2.26] - 2026-07-14
+
+### Hinzugefuegt (Lokdatenbank von SD-Karte)
+
+* **`src/locomotives.h/.cpp`:** Neues Modul fuer eine SD-basierte
+  Lokomotivdatenbank.
+
+* Lokomotivdaten werden beim Start aus folgender CSV-Datei geladen:
+  `/loks/loks.csv`
+
+* Unterstuetztes CSV-Format:
+
+  ```
+  address,name,image
+  42,BR 218,/loks/br218.bmp
+  110,BR 110,/loks/br110.bmp
+  111,V 200,/loks/v200.bmp
+  ```
+
+* Jeder Lokdatensatz enthaelt:
+
+  * Digitaladresse
+  * Anzeigename
+  * Pfad zur BMP-Bilddatei
+
+* Maximale Anzahl der geladenen Lokomotiven vorerst auf 32 begrenzt.
+
+* Funktionen zum Zugriff auf die Lokdatenbank ergaenzt:
+
+  * `locomotivesBegin()`
+  * `locomotivesCount()`
+  * `locomotivesGet()`
+  * `locomotivesFindByAddress()`
+  * `locomotivesPrintAll()`
+
+* Leere Zeilen und Kommentarzeilen mit `#` werden beim Einlesen ignoriert.
+
+* Ungueltige CSV-Zeilen werden verworfen und im seriellen Monitor gemeldet.
+
+* Doppelte Digitaladressen werden erkannt und nicht mehrfach uebernommen.
+
+* Ueberlange CSV-Zeilen werden abgelehnt, um Pufferueberlaeufe zu vermeiden.
+
+### Geaendert (Lokname und Lokbild dynamisch)
+
+* **`src/main.cpp`:** Lokdatenbank wird nach erfolgreicher
+  SD-Karteninitialisierung und vor dem ersten GUI-Aufbau geladen.
+* Alle erfolgreich geladenen Lokomotiven werden beim Start zur Kontrolle
+  im seriellen Monitor ausgegeben.
+* **`src/gui.cpp`:** Lokname wird anhand der aktuell ausgewaehlten
+  Digitaladresse aus der Lokdatenbank ermittelt.
+* Ist eine Adresse nicht in der CSV-Datei vorhanden, wird weiterhin
+  `Lok <Adresse>` als Fallback angezeigt.
+* Lokbild wird nicht mehr fest aus `/loks/diesel.bmp` geladen.
+* Der Bildpfad wird dynamisch aus dem zur Adresse gehoerenden CSV-Eintrag
+  uebernommen.
+* Ist eine Lok nicht in der Datenbank vorhanden oder fehlt ihre BMP-Datei,
+  wird weiterhin die programmatisch gezeichnete Standardlok angezeigt.
+* Bei einer Adressaenderung werden Lokname, Lokbild und Adressanzeige
+  gemeinsam aktualisiert.
+
+### Technik / Verifikation
+
+* Erwartete SD-Kartenstruktur:
+
+  ```
+  /
+  └── loks
+      ├── loks.csv
+      ├── br218.bmp
+      ├── br110.bmp
+      └── v200.bmp
+  ```
+
+* BMP-Anforderungen bleiben unveraendert:
+
+  * 96 x 30 Pixel
+  * 24 Bit RGB
+  * unkomprimiert
+
+* Fehlende oder fehlerhafte CSV-Dateien blockieren den Fahrregler nicht.
+
+* Fehlende Lokbilder blockieren weder GUI noch Gateway-Kommunikation.
+
+* Serielles Logging fuer geladene Lokomotiven, ungueltige CSV-Zeilen,
+  doppelte Adressen und fehlende Bilddateien ergaenzt.
+
+* **FW_VERSION:** v0.2.25 -> v0.2.26.
+
+
+
 ## [v0.2.25] - 2026-07-14
 
 ### Hinzugefuegt (SD-Karte und Lokbild aus BMP-Datei)

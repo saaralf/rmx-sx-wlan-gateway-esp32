@@ -23,14 +23,14 @@
 #include <Arduino.h>
 #include <TFT_eSPI.h>
 #include <SPI.h>
+#include "locomotives.h"
 
 // ---- Globales Display-Objekt ---------------------------------------------
 TFT_eSPI guiTft = TFT_eSPI();
 static bool drawBmp24(
-    const char* path,
+    const char *path,
     int16_t x,
-    int16_t y
-);
+    int16_t y);
 // ============================================================================
 // Zuletzt gezeichneter GUI-Zustand
 // ============================================================================
@@ -246,18 +246,22 @@ static void drawLocomotive()
         4,
         TFT_WHITE);
 
-    // Das vorbereitete Bild ist 96 x 30 Pixel groß.
-    // r.x + 68 = ungefähr horizontal zentriert.
-    // r.y + 4  = vier Pixel Abstand nach oben.
+    const LocomotiveInfo *locomotive =
+        locomotivesFindByAddress(
+            logicAddress);
+
     if (
-        drawBmp24(
-            "/loks/diesel.bmp",
-            r.x + 68,
-            r.y + 4))
+        locomotive != nullptr &&
+        locomotive->imagePath[0] != '\0')
     {
-        // BMP wurde erfolgreich gezeichnet.
-        // Die bisherige Lok muss nicht mehr gezeichnet werden.
-        return;
+        if (
+            drawBmp24(
+                locomotive->imagePath,
+                r.x + 68,
+                r.y + 4))
+        {
+            return;
+        }
     }
 
     // Fallback: bisherige, programmatisch gezeichnete Lok.
@@ -346,17 +350,60 @@ static void drawLocomotive()
  * @note Teil des Vollbilds. Name ist generisch; ein echter Lokname koennte
  *       spaeter ueber den Gateway-State vom Raspi mitgeliefert werden.
  */
-static void drawLocName()
+
+ static void drawLocName()
 {
     const Rect &nameRect = Layout::locomotiveName;
     const Rect &dropRect = Layout::locomotiveDropDown;
-    drawBeveledButton(nameRect.x, nameRect.y, nameRect.w, nameRect.h, TFT_WHITE);
-    drawLeftText("Lok " + String(logicAddress), nameRect.x + 7, nameRect.y + nameRect.h / 2,
-                 TFT_BLACK, 4, TFT_WHITE);
-    drawBeveledButton(dropRect.x, dropRect.y, dropRect.w, dropRect.h, COLOR_BUTTON);
-    guiTft.fillTriangle(dropRect.x + 7, dropRect.y + 11,
-                        dropRect.x + 20, dropRect.y + 11,
-                        dropRect.x + 13, dropRect.y + 20, TFT_BLACK);
+
+    const LocomotiveInfo *locomotive =
+        locomotivesFindByAddress(logicAddress);
+
+    String locomotiveName;
+
+    if (locomotive != nullptr)
+    {
+        locomotiveName = locomotive->name;
+    }
+    else
+    {
+        locomotiveName = "Lok " + String(logicAddress);
+    }
+
+    drawBeveledButton(
+        nameRect.x,
+        nameRect.y,
+        nameRect.w,
+        nameRect.h,
+        TFT_WHITE
+    );
+
+    drawLeftText(
+        locomotiveName,
+        nameRect.x + 7,
+        nameRect.y + nameRect.h / 2,
+        TFT_BLACK,
+        4,
+        TFT_WHITE
+    );
+
+    drawBeveledButton(
+        dropRect.x,
+        dropRect.y,
+        dropRect.w,
+        dropRect.h,
+        COLOR_BUTTON
+    );
+
+    guiTft.fillTriangle(
+        dropRect.x + 7,
+        dropRect.y + 11,
+        dropRect.x + 20,
+        dropRect.y + 11,
+        dropRect.x + 13,
+        dropRect.y + 20,
+        TFT_BLACK
+    );
 }
 
 /**
@@ -706,7 +753,7 @@ void guiUpdateAddress()
     {
         return;
     }
-
+    drawLocomotive();
     drawLocName();
     drawAddressSelector();
 

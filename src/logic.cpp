@@ -10,7 +10,7 @@
 #include "logic.h"
 #include "gui.h"     // Layout-Konstanten (Button-Rects)
 #include "encoder.h" // Drehregler
-
+#include "locomotives.h"
 // ---- Zustandsvariablen ----------------------------------------------------
 int logicSpeed = 0;
 int logicTargetSpeed = 0;
@@ -76,14 +76,44 @@ bool logicApplyTouch(int16_t px, int16_t py)
     setEncoderSpeedFocus();
     const char *dirStr = (logicDirection == Direction::FORWARD) ? "forward" : "reverse";
 
-    // --- Lok-Dropdown (Lok wechseln, Demo: Toggle 110 <-> 42) ---
-    if (pointInRect(px, py, Layout::locomotiveDropDown))
+    if (locomotivesCount() > 0)
     {
-        setEncoderAddressFocus();
-        logicAddress = (logicAddress == 110) ? 42 : 110;
-        logicDirtySelect = true;
-        logicSpeed = logicTargetSpeed = 0;
-        return true;
+        uint8_t currentIndex = 0;
+
+        for (uint8_t index = 0;
+             index < locomotivesCount();
+             index++)
+        {
+            const LocomotiveInfo *entry =
+                locomotivesGet(index);
+
+            if (
+                entry != nullptr &&
+                entry->address == logicAddress)
+            {
+                currentIndex = index;
+                break;
+            }
+        }
+
+        uint8_t nextIndex =
+            currentIndex + 1;
+
+        if (nextIndex >= locomotivesCount())
+        {
+            nextIndex = 0;
+        }
+
+        const LocomotiveInfo *nextLocomotive =
+            locomotivesGet(nextIndex);
+
+        if (nextLocomotive != nullptr)
+        {
+            logicAddress =
+                nextLocomotive->address;
+            return true;
+        }
+        return false;
     }
 
     // --- Licht (F0) ---
@@ -274,7 +304,7 @@ bool logicApplyEncoder(const EncoderEvent &ev)
             }
         }
         else
-        { 
+        {
             // Jede Encoderbewegung im Adressmodus verlängert den Timeout.
             encoderAddressFocusLastMs = millis();
             const uint8_t oldAddr = logicAddress;
@@ -309,8 +339,7 @@ bool logicUpdateEncoderFocus()
     setEncoderSpeedFocus();
 
     Serial.println(
-        "[encoder] ADDRESS timeout -> SPEED"
-    );
+        "[encoder] ADDRESS timeout -> SPEED");
 
     return true;
 }
